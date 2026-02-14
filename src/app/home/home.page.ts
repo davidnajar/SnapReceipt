@@ -76,11 +76,11 @@ export class HomePage implements OnInit {
         // Process the captured image
         await this.processReceipt(photo.base64String);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error capturing photo:', error);
       
       // Check if user cancelled
-      if (error.message && error.message.includes('cancelled')) {
+      if (error instanceof Error && error.message && error.message.includes('cancelled')) {
         return; // Don't show error if user cancelled
       }
       

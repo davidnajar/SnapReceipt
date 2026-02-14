@@ -128,14 +128,23 @@ export class SupabaseService {
       }
 
       // Map database fields to Receipt model
-      return data.map((item: any) => ({
+      return data.map((item: {
+        id: string;
+        date: string;
+        total: number;
+        merchant: string;
+        items: any;
+        category: string | null;
+        image_url: string | null;
+        created_at: string;
+      }) => ({
         id: item.id,
         date: item.date,
         total: item.total,
         merchant: item.merchant,
         items: item.items,
-        category: item.category,
-        imageUrl: item.image_url,
+        category: item.category || undefined,
+        imageUrl: item.image_url || undefined,
         createdAt: new Date(item.created_at)
       }));
     } catch (error) {

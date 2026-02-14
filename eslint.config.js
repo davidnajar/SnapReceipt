@@ -3,6 +3,7 @@ import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import angular from "@angular-eslint/eslint-plugin";
 import angularTemplate from "@angular-eslint/eslint-plugin-template";
+import angularTemplateParser from "@angular-eslint/template-parser";
 
 export default [
   {
@@ -44,9 +45,16 @@ export default [
   },
   {
     files: ["**/*.html"],
+    languageOptions: {
+      parser: angularTemplateParser
+    },
     plugins: {
       "@angular-eslint/template": angularTemplate
     },
     rules: {}
+  },
+  {
+    ignores: ["node_modules/**", "dist/**", "www/**", ".angular/**"]
   }
 ];
+

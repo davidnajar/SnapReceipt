@@ -7,14 +7,19 @@ import { Receipt } from '../models/receipt.model';
   providedIn: 'root'
 })
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private genAI: GoogleGenerativeAI | null = null;
+  private model: any = null;
 
   constructor() {
-    // Initialize Gemini AI with API key from environment
-    this.genAI = new GoogleGenerativeAI(environment.gemini.apiKey);
-    // Use Gemini 1.5 Flash model for fast processing
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Only initialize Gemini AI if properly configured
+    if (this.isConfigured()) {
+      try {
+        this.genAI = new GoogleGenerativeAI(environment.gemini.apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      } catch (error) {
+        console.error('Error initializing Gemini AI:', error);
+      }
+    }
   }
 
   /**
@@ -23,6 +28,10 @@ export class GeminiService {
    * @returns Promise with extracted receipt data
    */
   async extractReceiptData(base64Image: string): Promise<Partial<Receipt>> {
+    if (!this.model) {
+      throw new Error('Gemini AI is not configured. Please set up your Gemini API key.');
+    }
+
     try {
       // Prepare the prompt for Gemini
       const prompt = `Analyze this receipt image and extract the following information in JSON format:

@@ -7,14 +7,20 @@ import { Receipt } from '../models/receipt.model';
   providedIn: 'root'
 })
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
 
   constructor() {
-    // Initialize Supabase client
-    this.supabase = createClient(
-      environment.supabase.url,
-      environment.supabase.anonKey
-    );
+    // Only initialize Supabase if properly configured
+    if (this.isConfigured()) {
+      try {
+        this.supabase = createClient(
+          environment.supabase.url,
+          environment.supabase.anonKey
+        );
+      } catch (error) {
+        console.error('Error initializing Supabase:', error);
+      }
+    }
   }
 
   /**
@@ -24,6 +30,10 @@ export class SupabaseService {
    * @returns Promise with the public URL of the uploaded image
    */
   async uploadReceiptImage(base64Image: string, fileName: string): Promise<string> {
+    if (!this.supabase) {
+      throw new Error('Supabase is not configured. Please set up your Supabase credentials.');
+    }
+
     try {
       // Convert base64 to blob
       const blob = this.base64ToBlob(base64Image, 'image/jpeg');
@@ -58,6 +68,10 @@ export class SupabaseService {
    * @returns Promise with the saved receipt including its ID
    */
   async saveReceipt(receipt: Receipt): Promise<Receipt> {
+    if (!this.supabase) {
+      throw new Error('Supabase is not configured. Please set up your Supabase credentials.');
+    }
+
     try {
       const { data, error } = await this.supabase
         .from('receipts')
@@ -99,6 +113,10 @@ export class SupabaseService {
    * @returns Promise with array of receipts
    */
   async getReceipts(): Promise<Receipt[]> {
+    if (!this.supabase) {
+      throw new Error('Supabase is not configured. Please set up your Supabase credentials.');
+    }
+
     try {
       const { data, error } = await this.supabase
         .from('receipts')
@@ -134,7 +152,8 @@ export class SupabaseService {
     return environment.supabase.url !== 'YOUR_SUPABASE_URL_HERE' && 
            environment.supabase.anonKey !== 'YOUR_SUPABASE_ANON_KEY_HERE' &&
            environment.supabase.url.length > 0 &&
-           environment.supabase.anonKey.length > 0;
+           environment.supabase.anonKey.length > 0 &&
+           environment.supabase.url.startsWith('http');
   }
 
   /**

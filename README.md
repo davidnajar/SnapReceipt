@@ -4,9 +4,13 @@ SnapReceipt es una aplicación móvil desarrollada con Ionic/Angular que permite
 
 ## Características
 
+- 🔐 **Autenticación**: Sistema completo de registro e inicio de sesión con Supabase Auth
 - 📸 **Captura de Recibos**: Usa la cámara nativa del dispositivo para capturar fotos de tickets
 - 🤖 **Extracción Automática**: Utiliza Gemini 1.5 Flash AI para extraer datos estructurados (fecha, total, comercio, items, categoría)
-- 💾 **Almacenamiento**: Guarda los datos y las imágenes en Supabase
+- 💾 **Almacenamiento Seguro**: Guarda los datos y las imágenes en Supabase con aislamiento por usuario
+- 🔑 **API Keys Personales**: Cada usuario configura su propia API key de Gemini
+- ⚙️ **Configuración**: Página de ajustes para gestionar preferencias y API keys
+- 🛡️ **Seguridad**: Row Level Security (RLS) garantiza que cada usuario solo acceda a sus propios datos
 - 📱 **Diseño Responsive**: Interfaz moderna y adaptable con componentes Ionic
 - ⚡ **Rendimiento**: Optimizado para procesamiento rápido de imágenes
 
@@ -62,34 +66,34 @@ Antes de comenzar, asegúrate de tener instalado:
 
    a. Crea un nuevo proyecto en [Supabase](https://supabase.com/dashboard)
    
-   b. Crea la tabla `receipts` ejecutando este SQL en el SQL Editor:
-   ```sql
-   CREATE TABLE receipts (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     date TEXT NOT NULL,
-     total NUMERIC NOT NULL,
-     merchant TEXT NOT NULL,
-     items JSONB,
-     category TEXT,
-     image_url TEXT,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-   );
-   ```
+   b. Aplica las migraciones de base de datos:
+   - Ve a la carpeta `supabase/migrations/`
+   - Ejecuta cada archivo SQL en orden (001, 002, 003, 004, 005) en el SQL Editor de Supabase
+   - Ver instrucciones detalladas en [supabase/README.md](supabase/README.md)
    
    c. Crea un bucket de Storage llamado `receipts`:
    - Ve a Storage en el dashboard de Supabase
-   - Crea un nuevo bucket público llamado `receipts`
-   - Crea una carpeta dentro del bucket llamada `receipts`
+   - Crea un nuevo bucket llamado `receipts`
+   - Las políticas de acceso se configuran automáticamente mediante las migraciones
 
-   d. Configura las políticas de acceso (RLS) si es necesario
+   d. Habilita la autenticación por email:
+   - Ve a Authentication > Providers en el dashboard de Supabase
+   - Asegúrate de que "Email" esté habilitado
 
-5. **Obtener API Key de Gemini**
+5. **Registro y Configuración de Usuario**
 
-   a. Ve a [Google AI Studio](https://makersuite.google.com/app/apikey)
+   a. Registra una cuenta en la aplicación
    
-   b. Crea una nueva API key
+   b. Ve a la página de Settings en la aplicación
    
-   c. Copia la key y pégala en `environment.ts`
+   c. Obtén tu API Key de Gemini:
+   - Ve a [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Crea una nueva API key
+   - **Importante**: Cada usuario necesita su propia API key de Gemini
+   
+   d. Ingresa tu API key en la página de Settings de la aplicación
+   
+   e. Para instrucciones detalladas, consulta la página "Cómo obtener Gemini API Key" dentro de la aplicación
 
 ## Comandos de Desarrollo
 
@@ -264,8 +268,8 @@ Gestiona el almacenamiento en Supabase:
 - [ ] Estadísticas y gráficos de gastos
 - [ ] Exportación a PDF/CSV
 - [ ] Modo offline con sincronización
-- [ ] Autenticación de usuarios
-- [ ] Categorización automática mejorada
+- [ ] Soporte para múltiples idiomas
+- [ ] Compartir recibos con otros usuarios
 
 ## Contribuir
 

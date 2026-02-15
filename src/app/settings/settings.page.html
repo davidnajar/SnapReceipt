@@ -1,0 +1,92 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configuración</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="settings-container">
+    <!-- User Info Section -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="person-circle-outline"></ion-icon>
+          Información de Usuario
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item lines="none">
+          <ion-label>
+            <h3>Email</h3>
+            <p>{{ userEmail }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Gemini API Key Section -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="key-outline"></ion-icon>
+          API Key de Gemini
+        </ion-card-title>
+        <ion-card-subtitle>
+          Necesitas tu propia API key para usar la funcionalidad de extracción de datos
+        </ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Gemini API Key</ion-label>
+          <ion-input 
+            type="password" 
+            [(ngModel)]="geminiApiKey"
+            placeholder="AIza...">
+          </ion-input>
+        </ion-item>
+
+        <ion-button 
+          expand="block" 
+          (click)="goToGeminiGuide()"
+          fill="outline"
+          class="ion-margin-top">
+          <ion-icon slot="start" name="help-circle-outline"></ion-icon>
+          ¿Cómo obtener una API Key?
+        </ion-button>
+
+        <ion-button 
+          expand="block" 
+          (click)="onSaveSettings()"
+          color="primary"
+          class="ion-margin-top">
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+          Guardar Configuración
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Actions Section -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="settings-outline"></ion-icon>
+          Acciones
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button 
+          expand="block" 
+          (click)="onSignOut()"
+          color="danger"
+          fill="outline">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          Cerrar Sesión
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { LoadingController, AlertController, ToastController } from '@ionic/angular';
 import { CameraService } from '../services/camera.service';
 import { GeminiService } from '../services/gemini.service';
@@ -15,18 +16,43 @@ export class HomePage implements OnInit {
   capturedImage: string | null = null;
   extractedData: Partial<Receipt> | null = null;
   isProcessing = false;
+  hasGeminiKey = false;
 
   constructor(
     private cameraService: CameraService,
     private geminiService: GeminiService,
     private supabaseService: SupabaseService,
+    private router: Router,
     private loadingController: LoadingController,
     private alertController: AlertController,
     private toastController: ToastController
   ) { }
 
-  ngOnInit() {
-    this.checkConfiguration();
+  async ngOnInit() {
+    await this.loadUserSettings();
+    await this.checkConfiguration();
+  }
+
+  async ionViewWillEnter() {
+    await this.loadUserSettings();
+  }
+
+  /**
+   * Load user settings and set up Gemini API key
+   */
+  private async loadUserSettings() {
+    try {
+      const settings = await this.supabaseService.getUserSettings();
+      if (settings.gemini_api_key) {
+        this.geminiService.setUserApiKey(settings.gemini_api_key);
+        this.hasGeminiKey = true;
+      } else {
+        this.hasGeminiKey = false;
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+      this.hasGeminiKey = false;
+    }
   }
 
   /**
@@ -36,21 +62,39 @@ export class HomePage implements OnInit {
     const errors: string[] = [];
 
     if (!this.geminiService.isConfigured()) {
-      errors.push('Gemini API key not configured');
+      errors.push('API key de Gemini no configurada');
     }
 
     if (!this.supabaseService.isConfigured()) {
-      errors.push('Supabase credentials not configured');
+      errors.push('Credenciales de Supabase no configuradas');
     }
 
     if (errors.length > 0) {
       const alert = await this.alertController.create({
-        header: 'Configuration Required',
-        message: `Please configure the following in environment.ts:\n${errors.join('\n')}`,
-        buttons: ['OK']
+        header: 'Configuración Requerida',
+        message: `Por favor configura lo siguiente:\n${errors.join('\n')}\n\nVe a Configuración para añadir tu API key de Gemini.`,
+        buttons: [
+          {
+            text: 'Ir a Configuración',
+            handler: () => {
+              this.goToSettings();
+            }
+          },
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          }
+        ]
       });
       await alert.present();
     }
+  }
+
+  /**
+   * Navigate to settings page
+   */
+  goToSettings() {
+    this.router.navigate(['/settings']);
   }
 
   /**

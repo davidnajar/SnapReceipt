@@ -9,9 +9,10 @@ import { Receipt } from '../models/receipt.model';
 export class GeminiService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: any = null;
+  private userApiKey: string | null = null;
 
   constructor() {
-    // Only initialize Gemini AI if properly configured
+    // Initialize with environment key if available (for backwards compatibility)
     if (this.isConfigured()) {
       try {
         this.genAI = new GoogleGenerativeAI(environment.gemini.apiKey);
@@ -20,6 +21,30 @@ export class GeminiService {
         console.error('Error initializing Gemini AI:', error);
       }
     }
+  }
+
+  /**
+   * Set user's personal API key
+   * @param apiKey User's Gemini API key
+   */
+  setUserApiKey(apiKey: string) {
+    this.userApiKey = apiKey;
+    try {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    } catch (error) {
+      console.error('Error initializing Gemini AI with user key:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear user's API key
+   */
+  clearUserApiKey() {
+    this.userApiKey = null;
+    this.genAI = null;
+    this.model = null;
   }
 
   /**
@@ -87,7 +112,20 @@ export class GeminiService {
    * @returns boolean indicating if API key is set
    */
   isConfigured(): boolean {
+    // Check if user has set their own API key first
+    if (this.userApiKey && this.userApiKey.length > 0) {
+      return true;
+    }
+    // Fall back to environment key
     return environment.gemini.apiKey !== 'YOUR_GEMINI_API_KEY_HERE' && 
            environment.gemini.apiKey.length > 0;
+  }
+
+  /**
+   * Check if user has their own API key configured
+   * @returns boolean indicating if user API key is set
+   */
+  hasUserApiKey(): boolean {
+    return this.userApiKey !== null && this.userApiKey.length > 0;
   }
 }

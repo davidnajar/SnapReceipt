@@ -1,0 +1,200 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/settings"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Cómo obtener API Key de Gemini</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="guide-container">
+    <div class="intro-section">
+      <ion-icon name="key" class="header-icon"></ion-icon>
+      <h1>Obtén tu API Key de Gemini</h1>
+      <p>Sigue estos sencillos pasos para obtener tu API key gratuita de Google Gemini.</p>
+    </div>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-badge color="primary">1</ion-badge>
+          Accede a Google AI Studio
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Ve a la página de API keys de Google AI Studio haciendo clic en el botón de abajo.</p>
+        <ion-button 
+          expand="block" 
+          (click)="openGeminiStudio()"
+          class="ion-margin-top">
+          <ion-icon slot="start" name="open-outline"></ion-icon>
+          Abrir Google AI Studio
+        </ion-button>
+        <ion-note>
+          <small>Se abrirá en una nueva pestaña: https://aistudio.google.com/app/apikey</small>
+        </ion-note>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-badge color="primary">2</ion-badge>
+          Inicia sesión con tu cuenta de Google
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Si no has iniciado sesión, Google te pedirá que lo hagas con tu cuenta de Google.</p>
+        <ion-list>
+          <ion-item lines="none">
+            <ion-icon name="checkmark-circle" slot="start" color="success"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Puedes usar cualquier cuenta de Google personal
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="checkmark-circle" slot="start" color="success"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              No necesitas una cuenta empresarial
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-badge color="primary">3</ion-badge>
+          Crea una nueva API Key
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Una vez en la página, verás un botón para crear una nueva API key.</p>
+        <ion-list>
+          <ion-item lines="none">
+            <ion-icon name="arrow-forward" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Haz clic en "Create API key" o "Crear API key"
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="arrow-forward" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Selecciona un proyecto de Google Cloud o crea uno nuevo
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="arrow-forward" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              La API key se generará automáticamente
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-badge color="primary">4</ion-badge>
+          Copia tu API Key
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Una vez generada, verás tu API key en pantalla.</p>
+        <ion-list>
+          <ion-item lines="none">
+            <ion-icon name="copy" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Haz clic en el ícono de copiar para copiar la API key
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="eye-off" slot="start" color="warning"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              <strong>¡Importante!</strong> Guarda tu API key de forma segura
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-badge color="primary">5</ion-badge>
+          Pega la API Key en SnapReceipt
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Regresa a la página de Configuración de SnapReceipt y pega tu API key en el campo correspondiente.</p>
+        <ion-list>
+          <ion-item lines="none">
+            <ion-icon name="settings" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Ve a la página de Configuración
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="create" slot="start" color="primary"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Pega tu API key en el campo "Gemini API Key"
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon name="save" slot="start" color="success"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              Haz clic en "Guardar Configuración"
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card color="success">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="checkmark-circle"></ion-icon>
+          ¡Listo!
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Ahora puedes empezar a capturar recibos y la IA de Gemini extraerá automáticamente la información.</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card color="warning">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="information-circle"></ion-icon>
+          Información Importante
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item lines="none" color="warning">
+            <ion-icon name="alert-circle" slot="start"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              <strong>Gratis:</strong> Gemini 1.5 Flash tiene un plan gratuito generoso
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none" color="warning">
+            <ion-icon name="shield-checkmark" slot="start"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              <strong>Privacidad:</strong> Tu API key se guarda de forma segura y solo tú puedes verla
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none" color="warning">
+            <ion-icon name="people" slot="start"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              <strong>Personal:</strong> Cada usuario necesita su propia API key
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+

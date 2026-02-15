@@ -29,7 +29,7 @@ jobs:
     
     - name: Run linter
       run: npm run lint
-      continue-on-error: true
+      continue-on-error: true  # Allow build to succeed even with lint warnings
     
     - name: Build Angular application
       run: npm run build

@@ -41,9 +41,18 @@ jobs:
     - name: Build Angular application
       run: npm run build
     
+    - name: Check if Android platform exists
+      id: check-android
+      run: |
+        if [ -d "android" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Add Android platform
+      if: steps.check-android.outputs.exists == 'false'
       run: npx cap add android
-      continue-on-error: true
     
     - name: Sync Capacitor
       run: npx cap sync android

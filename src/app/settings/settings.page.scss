@@ -1,0 +1,18 @@
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+ion-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  ion-icon {
+    font-size: 1.5rem;
+  }
+}
+
+ion-item {
+  margin-bottom: 1rem;
+}

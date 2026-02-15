@@ -4,9 +4,13 @@ SnapReceipt es una aplicación móvil desarrollada con Ionic/Angular que permite
 
 ## Características
 
+- 🔐 **Autenticación**: Sistema completo de registro e inicio de sesión con Supabase Auth
 - 📸 **Captura de Recibos**: Usa la cámara nativa del dispositivo para capturar fotos de tickets
 - 🤖 **Extracción Automática**: Utiliza Gemini 1.5 Flash AI para extraer datos estructurados (fecha, total, comercio, items, categoría)
-- 💾 **Almacenamiento**: Guarda los datos y las imágenes en Supabase
+- 💾 **Almacenamiento Seguro**: Guarda los datos y las imágenes en Supabase con aislamiento por usuario
+- 🔑 **API Keys Personales**: Cada usuario configura su propia API key de Gemini
+- ⚙️ **Configuración**: Página de ajustes para gestionar preferencias y API keys
+- 🛡️ **Seguridad**: Row Level Security (RLS) garantiza que cada usuario solo acceda a sus propios datos
 - 📱 **Diseño Responsive**: Interfaz moderna y adaptable con componentes Ionic
 - ⚡ **Rendimiento**: Optimizado para procesamiento rápido de imágenes
 
@@ -41,15 +45,15 @@ Antes de comenzar, asegúrate de tener instalado:
    npm install
    ```
 
-3. **Configurar variables de entorno**
+3. **Configurar variables de entorno de Supabase**
 
-   Edita el archivo `src/environments/environment.ts` y configura tus credenciales:
+   Edita el archivo `src/environments/environment.ts` y configura tus credenciales de Supabase:
 
    ```typescript
    export const environment = {
      production: false,
      gemini: {
-       apiKey: 'TU_API_KEY_DE_GEMINI_AQUI'
+       apiKey: 'YOUR_GEMINI_API_KEY_HERE'  // No es necesario configurar aquí, cada usuario usará su propia key
      },
      supabase: {
        url: 'TU_URL_DE_SUPABASE_AQUI',
@@ -57,39 +61,41 @@ Antes de comenzar, asegúrate de tener instalado:
      }
    };
    ```
+   
+   **Nota**: La API key de Gemini ya no se configura aquí. Cada usuario configurará su propia API key en la aplicación después de registrarse.
 
 4. **Configurar Supabase**
 
    a. Crea un nuevo proyecto en [Supabase](https://supabase.com/dashboard)
    
-   b. Crea la tabla `receipts` ejecutando este SQL en el SQL Editor:
-   ```sql
-   CREATE TABLE receipts (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     date TEXT NOT NULL,
-     total NUMERIC NOT NULL,
-     merchant TEXT NOT NULL,
-     items JSONB,
-     category TEXT,
-     image_url TEXT,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-   );
-   ```
+   b. Aplica las migraciones de base de datos:
+   - Ve a la carpeta `supabase/migrations/`
+   - Ejecuta cada archivo SQL en orden (001, 002, 003, 004, 005) en el SQL Editor de Supabase
+   - Ver instrucciones detalladas en [supabase/README.md](supabase/README.md)
    
    c. Crea un bucket de Storage llamado `receipts`:
    - Ve a Storage en el dashboard de Supabase
-   - Crea un nuevo bucket público llamado `receipts`
-   - Crea una carpeta dentro del bucket llamada `receipts`
+   - Crea un nuevo bucket llamado `receipts`
+   - Las políticas de acceso se configuran automáticamente mediante las migraciones
 
-   d. Configura las políticas de acceso (RLS) si es necesario
+   d. Habilita la autenticación por email:
+   - Ve a Authentication > Providers en el dashboard de Supabase
+   - Asegúrate de que "Email" esté habilitado
 
-5. **Obtener API Key de Gemini**
+5. **Registro y Configuración de Usuario**
 
-   a. Ve a [Google AI Studio](https://makersuite.google.com/app/apikey)
+   a. Registra una cuenta en la aplicación
    
-   b. Crea una nueva API key
+   b. Ve a la página de Settings en la aplicación
    
-   c. Copia la key y pégala en `environment.ts`
+   c. Obtén tu API Key de Gemini:
+   - Ve a [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Crea una nueva API key
+   - **Importante**: Cada usuario necesita su propia API key de Gemini
+   
+   d. Ingresa tu API key en la página de Settings de la aplicación
+   
+   e. Para instrucciones detalladas, consulta la página "Cómo obtener Gemini API Key" dentro de la aplicación
 
 ## Comandos de Desarrollo
 
@@ -158,7 +164,12 @@ ionic cap run android
 SnapReceipt/
 ├── src/
 │   ├── app/
+│   │   ├── guards/            # Guards de autenticación
 │   │   ├── home/              # Página principal con FAB y captura
+│   │   ├── login/             # Página de inicio de sesión
+│   │   ├── register/          # Página de registro
+│   │   ├── settings/          # Página de configuración (API key)
+│   │   ├── gemini-guide/      # Guía para obtener API key
 │   │   ├── models/            # Interfaces TypeScript (Receipt)
 │   │   ├── services/          # Servicios (Camera, Gemini, Supabase)
 │   │   ├── app.component.*    # Componente raíz
@@ -171,6 +182,9 @@ SnapReceipt/
 │   ├── index.html             # HTML principal
 │   ├── main.ts               # Punto de entrada
 │   └── polyfills.ts          # Polyfills
+├── supabase/
+│   ├── migrations/            # Migraciones SQL
+│   └── README.md             # Documentación de migraciones
 ├── capacitor.config.ts        # Configuración de Capacitor
 ├── angular.json              # Configuración de Angular
 ├── package.json              # Dependencias
@@ -179,11 +193,14 @@ SnapReceipt/
 
 ## Flujo de Usuario
 
-1. El usuario abre la aplicación
-2. Ve la pantalla principal con un botón FAB (Floating Action Button) en la esquina inferior derecha
-3. Presiona el botón FAB con el ícono de cámara
-4. Se abre la cámara nativa del dispositivo
-5. Captura una foto del ticket/recibo
+1. El usuario abre la aplicación y ve la pantalla de login
+2. Si no tiene cuenta, se registra con email y contraseña
+3. Después de registrarse/iniciar sesión, accede a la pantalla principal
+4. Configura su API key de Gemini en la página de Configuración (primer uso)
+5. Regresa a la pantalla principal y ve un botón FAB (Floating Action Button) en la esquina inferior derecha
+6. Presiona el botón FAB con el ícono de cámara
+7. Se abre la cámara nativa del dispositivo
+8. Captura una foto del ticket/recibo
 6. La aplicación muestra un indicador de carga mientras procesa
 7. La imagen se envía a Gemini AI para extraer los datos
 8. Se muestra un diálogo de confirmación con los datos extraídos
@@ -264,8 +281,8 @@ Gestiona el almacenamiento en Supabase:
 - [ ] Estadísticas y gráficos de gastos
 - [ ] Exportación a PDF/CSV
 - [ ] Modo offline con sincronización
-- [ ] Autenticación de usuarios
-- [ ] Categorización automática mejorada
+- [ ] Soporte para múltiples idiomas
+- [ ] Compartir recibos con otros usuarios
 
 ## Contribuir
 

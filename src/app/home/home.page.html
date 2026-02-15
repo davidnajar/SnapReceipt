@@ -1,8 +1,13 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>
       SnapReceipt
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="goToSettings()">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -17,18 +22,27 @@
     <!-- Welcome message when no image captured -->
     <div *ngIf="!capturedImage" class="welcome-container">
       <ion-icon name="receipt-outline" class="welcome-icon"></ion-icon>
-      <h2>Welcome to SnapReceipt</h2>
-      <p>Tap the camera button below to capture and process your receipts</p>
+      <h2>Bienvenido a SnapReceipt</h2>
+      <p>Pulsa el botón de cámara para capturar y procesar tus recibos</p>
+      <ion-button 
+        *ngIf="!hasGeminiKey"
+        expand="block"
+        fill="outline"
+        (click)="goToSettings()"
+        class="ion-margin-top">
+        <ion-icon slot="start" name="key-outline"></ion-icon>
+        Configura tu API Key de Gemini
+      </ion-button>
     </div>
 
     <!-- Preview of captured image -->
     <div *ngIf="capturedImage && !isProcessing" class="preview-container">
       <ion-card>
         <ion-card-header>
-          <ion-card-title>Captured Receipt</ion-card-title>
+          <ion-card-title>Recibo Capturado</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <img [src]="'data:image/jpeg;base64,' + capturedImage" alt="Captured receipt" class="preview-image" />
+          <img [src]="'data:image/jpeg;base64,' + capturedImage" alt="Recibo capturado" class="preview-image" />
         </ion-card-content>
       </ion-card>
     </div>
@@ -36,7 +50,7 @@
     <!-- Processing indicator -->
     <div *ngIf="isProcessing" class="processing-container">
       <ion-spinner name="crescent" color="primary"></ion-spinner>
-      <p>Processing your receipt...</p>
+      <p>Procesando tu recibo...</p>
     </div>
   </div>
 

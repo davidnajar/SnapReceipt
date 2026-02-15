@@ -13,6 +13,7 @@ SnapReceipt es una aplicación móvil desarrollada con Ionic/Angular que permite
 - 🛡️ **Seguridad**: Row Level Security (RLS) garantiza que cada usuario solo acceda a sus propios datos
 - 📱 **Diseño Responsive**: Interfaz moderna y adaptable con componentes Ionic
 - ⚡ **Rendimiento**: Optimizado para procesamiento rápido de imágenes
+- 🚀 **CI/CD**: GitHub Actions para builds automáticos de Angular y APK de Android bajo demanda
 
 ## Stack Tecnológico
 
@@ -157,6 +158,26 @@ ionic cap run ios
 # Android
 ionic cap run android
 ```
+
+## GitHub Actions / CI-CD
+
+Este proyecto incluye workflows de GitHub Actions para automatizar builds:
+
+### Build de Angular (Automático)
+Se ejecuta automáticamente en cada push a las ramas principales (`main`, `master`, `develop`):
+- Compila la aplicación Angular
+- Ejecuta el linter
+- Genera artefactos descargables de la carpeta `www/`
+
+### Build de Android APK (Manual)
+Para compilar un APK de Android:
+1. Ve a la pestaña **Actions** en GitHub
+2. Selecciona el workflow **"Build Android APK"**
+3. Haz clic en **"Run workflow"**
+4. Selecciona el tipo de build (`debug` o `release`)
+5. Descarga el APK desde los artefactos del workflow
+
+Para más detalles, consulta [.github/workflows/README.md](.github/workflows/README.md)
 
 ## Estructura del Proyecto
 

@@ -45,15 +45,15 @@ Antes de comenzar, asegúrate de tener instalado:
    npm install
    ```
 
-3. **Configurar variables de entorno**
+3. **Configurar variables de entorno de Supabase**
 
-   Edita el archivo `src/environments/environment.ts` y configura tus credenciales:
+   Edita el archivo `src/environments/environment.ts` y configura tus credenciales de Supabase:
 
    ```typescript
    export const environment = {
      production: false,
      gemini: {
-       apiKey: 'TU_API_KEY_DE_GEMINI_AQUI'
+       apiKey: 'YOUR_GEMINI_API_KEY_HERE'  // No es necesario configurar aquí, cada usuario usará su propia key
      },
      supabase: {
        url: 'TU_URL_DE_SUPABASE_AQUI',
@@ -61,6 +61,8 @@ Antes de comenzar, asegúrate de tener instalado:
      }
    };
    ```
+   
+   **Nota**: La API key de Gemini ya no se configura aquí. Cada usuario configurará su propia API key en la aplicación después de registrarse.
 
 4. **Configurar Supabase**
 
@@ -162,7 +164,12 @@ ionic cap run android
 SnapReceipt/
 ├── src/
 │   ├── app/
+│   │   ├── guards/            # Guards de autenticación
 │   │   ├── home/              # Página principal con FAB y captura
+│   │   ├── login/             # Página de inicio de sesión
+│   │   ├── register/          # Página de registro
+│   │   ├── settings/          # Página de configuración (API key)
+│   │   ├── gemini-guide/      # Guía para obtener API key
 │   │   ├── models/            # Interfaces TypeScript (Receipt)
 │   │   ├── services/          # Servicios (Camera, Gemini, Supabase)
 │   │   ├── app.component.*    # Componente raíz
@@ -175,6 +182,9 @@ SnapReceipt/
 │   ├── index.html             # HTML principal
 │   ├── main.ts               # Punto de entrada
 │   └── polyfills.ts          # Polyfills
+├── supabase/
+│   ├── migrations/            # Migraciones SQL
+│   └── README.md             # Documentación de migraciones
 ├── capacitor.config.ts        # Configuración de Capacitor
 ├── angular.json              # Configuración de Angular
 ├── package.json              # Dependencias
@@ -183,11 +193,14 @@ SnapReceipt/
 
 ## Flujo de Usuario
 
-1. El usuario abre la aplicación
-2. Ve la pantalla principal con un botón FAB (Floating Action Button) en la esquina inferior derecha
-3. Presiona el botón FAB con el ícono de cámara
-4. Se abre la cámara nativa del dispositivo
-5. Captura una foto del ticket/recibo
+1. El usuario abre la aplicación y ve la pantalla de login
+2. Si no tiene cuenta, se registra con email y contraseña
+3. Después de registrarse/iniciar sesión, accede a la pantalla principal
+4. Configura su API key de Gemini en la página de Configuración (primer uso)
+5. Regresa a la pantalla principal y ve un botón FAB (Floating Action Button) en la esquina inferior derecha
+6. Presiona el botón FAB con el ícono de cámara
+7. Se abre la cámara nativa del dispositivo
+8. Captura una foto del ticket/recibo
 6. La aplicación muestra un indicador de carga mientras procesa
 7. La imagen se envía a Gemini AI para extraer los datos
 8. Se muestra un diálogo de confirmación con los datos extraídos

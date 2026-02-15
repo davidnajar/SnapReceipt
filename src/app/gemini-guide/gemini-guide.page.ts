@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
   selector: 'app-gemini-guide',
   templateUrl: './gemini-guide.page.html',
   styleUrls: ['./gemini-guide.page.scss'],
+  standalone: false
 })
 export class GeminiGuidePage implements OnInit {
 

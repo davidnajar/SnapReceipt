@@ -29,8 +29,10 @@ export class HomePage implements OnInit {
   ) { }
 
   async ngOnInit() {
-    await this.loadUserSettings();
-    await this.checkConfiguration();
+    await Promise.all([
+      this.loadUserSettings(),
+      this.checkConfiguration()
+    ]);
   }
 
   async ionViewWillEnter() {

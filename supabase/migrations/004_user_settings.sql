@@ -43,12 +43,15 @@ CREATE POLICY "Users can delete their own settings"
   USING (auth.uid() = user_id);
 
 -- Create trigger for user_settings updates
+-- Note: This depends on update_updated_at_column() function from 001_initial_schema.sql
+DROP TRIGGER IF EXISTS update_user_settings_updated_at ON public.user_settings;
 CREATE TRIGGER update_user_settings_updated_at 
   BEFORE UPDATE ON public.user_settings 
   FOR EACH ROW 
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to initialize user settings on first login
+-- Note: This creates a separate trigger from the profile creation in 002_auth_setup.sql
 CREATE OR REPLACE FUNCTION public.initialize_user_settings()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -60,6 +63,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to initialize settings when user is created
+-- Note: To avoid conflicts, check if this needs to be combined with profile creation trigger
+DROP TRIGGER IF EXISTS on_user_settings_init ON auth.users;
 CREATE TRIGGER on_user_settings_init
   AFTER INSERT ON auth.users
   FOR EACH ROW

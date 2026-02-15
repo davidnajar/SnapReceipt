@@ -117,6 +117,9 @@ export class SupabaseService {
 
   // ============ User Settings Methods ============
 
+  // PostgreSQL error code for no rows returned
+  private readonly PGRST_NO_ROWS_ERROR = 'PGRST116';
+
   /**
    * Get user settings including Gemini API key
    * @returns Promise with user settings
@@ -139,7 +142,7 @@ export class SupabaseService {
 
     if (error) {
       // If no settings exist yet, return empty settings
-      if (error.code === 'PGRST116') {
+      if (error.code === this.PGRST_NO_ROWS_ERROR) {
         return { gemini_api_key: null, preferences: {} };
       }
       throw error;

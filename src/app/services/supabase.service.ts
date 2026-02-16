@@ -23,6 +23,14 @@ export class SupabaseService {
     }
   }
 
+  /**
+   * Get the Supabase client instance
+   * @returns SupabaseClient instance or null
+   */
+  getSupabaseClient(): SupabaseClient | null {
+    return this.supabase;
+  }
+
   // ============ Authentication Methods ============
 
   /**
@@ -310,6 +318,10 @@ export class SupabaseService {
         category: string | null;
         image_url: string | null;
         created_at: string;
+        status: string | null;
+        storage_path: string | null;
+        error_message: string | null;
+        currency: string | null;
       }) => ({
         id: item.id,
         date: item.date,
@@ -318,7 +330,11 @@ export class SupabaseService {
         items: item.items,
         category: item.category || undefined,
         imageUrl: item.image_url || undefined,
-        createdAt: new Date(item.created_at)
+        createdAt: new Date(item.created_at),
+        status: item.status || 'completed',
+        storagePath: item.storage_path || undefined,
+        errorMessage: item.error_message || undefined,
+        currency: item.currency || undefined
       }));
     } catch (error) {
       console.error('Error fetching receipts:', error);

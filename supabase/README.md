@@ -17,6 +17,7 @@ The migrations are numbered sequentially and should be executed in order:
 3. **003_rls_policies.sql** - Configures Row Level Security (RLS) policies for data isolation
 4. **004_user_settings.sql** - Creates user settings table for storing Gemini API keys
 5. **005_storage_policies.sql** - Configures storage bucket policies for receipt images
+6. **006_async_processing_schema.sql** - Adds async processing fields (status, storage_path, error_message, currency)
 
 ## How to Apply Migrations
 
@@ -89,6 +90,10 @@ Stores receipt information extracted from images.
 - `items` (JSONB) - Array of items (optional)
 - `category` (TEXT) - Receipt category (groceries, restaurant, etc.)
 - `image_url` (TEXT) - URL to receipt image in storage
+- `status` (TEXT) - Processing status: 'processing', 'completed', or 'error' (default: 'processing')
+- `storage_path` (TEXT) - Path to image in Supabase Storage bucket
+- `error_message` (TEXT) - Error message if processing failed
+- `currency` (TEXT) - Currency code (USD, EUR, MXN, etc.)
 - `created_at` (TIMESTAMP) - When record was created
 - `updated_at` (TIMESTAMP) - When record was last updated
 

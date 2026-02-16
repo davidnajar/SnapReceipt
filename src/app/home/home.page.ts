@@ -29,10 +29,8 @@ export class HomePage implements OnInit {
   ) { }
 
   async ngOnInit() {
-    await Promise.all([
-      this.loadUserSettings(),
-      this.checkConfiguration()
-    ]);
+    await this.loadUserSettings();
+    await this.checkConfiguration();
   }
 
   async ionViewWillEnter() {
@@ -97,6 +95,13 @@ export class HomePage implements OnInit {
    */
   goToSettings() {
     this.router.navigate(['/settings']);
+  }
+
+  /**
+   * Navigate to receipts page
+   */
+  goToReceipts() {
+    this.router.navigate(['/receipts']);
   }
 
   /**
@@ -203,6 +208,9 @@ export class HomePage implements OnInit {
       
       // Show success message
       await this.showSuccess('Receipt saved successfully!');
+      
+      // Navigate to receipts page
+      this.router.navigate(['/receipts']);
       
       // Reset state
       this.capturedImage = null;

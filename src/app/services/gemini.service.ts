@@ -16,10 +16,44 @@ export class GeminiService {
     if (this.isConfigured()) {
       try {
         this.genAI = new GoogleGenerativeAI(environment.gemini.apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        // List available models for debugging
+        this.listAvailableModels();
       } catch (error) {
         console.error('Error initializing Gemini AI:', error);
       }
+    }
+  }
+
+  /**
+   * List available Gemini models
+   */
+  async listAvailableModels() {
+    if (!this.genAI) {
+      console.warn('Gemini AI not initialized');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${this.userApiKey || environment.gemini.apiKey}`
+      );
+      const data = await response.json();
+      
+      console.log('=== Available Gemini Models ===');
+      if (data.models) {
+        data.models.forEach((model: any) => {
+          const supportsGenerate = model.supportedGenerationMethods?.includes('generateContent');
+          console.log(`Model: ${model.name}`);
+          console.log(`  Display Name: ${model.displayName}`);
+          console.log(`  Supports generateContent: ${supportsGenerate ? 'YES' : 'NO'}`);
+          console.log(`  Supported methods: ${model.supportedGenerationMethods?.join(', ')}`);
+          console.log('---');
+        });
+      }
+      console.log('===============================');
+    } catch (error) {
+      console.error('Error listing models:', error);
     }
   }
 
@@ -31,7 +65,9 @@ export class GeminiService {
     this.userApiKey = apiKey;
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      // List available models for debugging
+      this.listAvailableModels();
     } catch (error) {
       console.error('Error initializing Gemini AI with user key:', error);
       throw error;
@@ -64,7 +100,7 @@ export class GeminiService {
         "date": "YYYY-MM-DD format",
         "total": number (just the number, no currency symbol),
         "merchant": "store/merchant name",
-        "items": [{"name": "item name", "price": number, "quantity": number}],
+        "items": [{"name": "item name", "price": number, "quantity": number, "category": "category"}],
         "category": "general category like groceries, restaurant, shopping, etc."
       }
       
@@ -74,6 +110,8 @@ export class GeminiService {
       - For date, try to extract in YYYY-MM-DD format, if year is missing, use current year
       - For total, extract the final total amount as a number
       - For items, extract as many as you can identify
+      - For each item, assign a category from: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, other
+      - Categorize items based on their nature (e.g., "milk" -> "beverages", "bread" -> "food", "shirt" -> "clothing")
       - Be as accurate as possible`;
 
       // Prepare image data for Gemini

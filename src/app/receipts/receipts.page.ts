@@ -72,6 +72,13 @@ export class ReceiptsPage implements OnInit {
   }
 
   /**
+   * Navigate to reports page
+   */
+  goToReports() {
+    this.router.navigate(['/reports']);
+  }
+
+  /**
    * Get category color for chip styling
    */
   getCategoryColor(category?: string): string {

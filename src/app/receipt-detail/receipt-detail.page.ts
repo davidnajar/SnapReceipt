@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase.service';
+import { CategoryHelper } from '../services/category-helper';
 import { Receipt, ReceiptItem } from '../models/receipt.model';
 
 @Component({
@@ -18,6 +19,7 @@ export class ReceiptDetailPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private supabaseService: SupabaseService,
+    private categoryHelper: CategoryHelper,
     private loadingController: LoadingController,
     private alertController: AlertController
   ) { }
@@ -71,52 +73,14 @@ export class ReceiptDetailPage implements OnInit {
    * Get category color for chip styling
    */
   getCategoryColor(category?: string): string {
-    if (!category) return 'medium';
-    
-    const colorMap: { [key: string]: string } = {
-      'food': 'success',
-      'beverages': 'tertiary',
-      'groceries': 'success',
-      'restaurant': 'warning',
-      'shopping': 'secondary',
-      'clothing': 'secondary',
-      'electronics': 'primary',
-      'travel': 'danger',
-      'education': 'tertiary',
-      'health': 'success',
-      'entertainment': 'warning',
-      'home': 'medium',
-      'transport': 'danger',
-      'other': 'medium'
-    };
-
-    return colorMap[category.toLowerCase()] || 'medium';
+    return this.categoryHelper.getCategoryColor(category);
   }
 
   /**
    * Get category icon for display
    */
   getCategoryIcon(category?: string): string {
-    if (!category) return 'pricetag-outline';
-    
-    const iconMap: { [key: string]: string } = {
-      'food': 'fast-food-outline',
-      'beverages': 'cafe-outline',
-      'groceries': 'cart-outline',
-      'restaurant': 'restaurant-outline',
-      'shopping': 'bag-outline',
-      'clothing': 'shirt-outline',
-      'electronics': 'phone-portrait-outline',
-      'travel': 'airplane-outline',
-      'education': 'school-outline',
-      'health': 'medical-outline',
-      'entertainment': 'film-outline',
-      'home': 'home-outline',
-      'transport': 'car-outline',
-      'other': 'pricetag-outline'
-    };
-
-    return iconMap[category.toLowerCase()] || 'pricetag-outline';
+    return this.categoryHelper.getCategoryIcon(category);
   }
 
   /**

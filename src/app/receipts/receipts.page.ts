@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase.service';
+import { CategoryHelper } from '../services/category-helper';
 import { Receipt } from '../models/receipt.model';
 
 @Component({
@@ -16,6 +17,7 @@ export class ReceiptsPage implements OnInit {
 
   constructor(
     private supabaseService: SupabaseService,
+    private categoryHelper: CategoryHelper,
     private router: Router,
     private loadingController: LoadingController,
     private alertController: AlertController
@@ -71,26 +73,7 @@ export class ReceiptsPage implements OnInit {
    * Get category color for chip styling
    */
   getCategoryColor(category?: string): string {
-    if (!category) return 'medium';
-    
-    const colorMap: { [key: string]: string } = {
-      'food': 'success',
-      'beverages': 'tertiary',
-      'groceries': 'success',
-      'restaurant': 'warning',
-      'shopping': 'secondary',
-      'clothing': 'secondary',
-      'electronics': 'primary',
-      'travel': 'danger',
-      'education': 'tertiary',
-      'health': 'success',
-      'entertainment': 'warning',
-      'home': 'medium',
-      'transport': 'danger',
-      'other': 'medium'
-    };
-
-    return colorMap[category.toLowerCase()] || 'medium';
+    return this.categoryHelper.getCategoryColor(category);
   }
 
   /**

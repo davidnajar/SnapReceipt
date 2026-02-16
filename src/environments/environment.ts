@@ -12,8 +12,8 @@ export const environment = {
   // Supabase Configuration
   // Get your credentials from: https://supabase.com/dashboard/project/_/settings/api
   supabase: {
-    url: 'YOUR_SUPABASE_URL_HERE',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY_HERE'
+    url: 'https://qmspsfsqseizmheghldd.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtc3BzZnNxc2Vpem1oZWdobGRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMTQ3NDEsImV4cCI6MjA4Njc5MDc0MX0.zrrZKlz3TX4h-TK4DGbVnkXMOgMxVM_ApqaE4JPny34'
   }
 };
 

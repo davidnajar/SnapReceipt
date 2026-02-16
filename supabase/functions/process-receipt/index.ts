@@ -30,9 +30,12 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let receiptId: string | undefined;
+
   try {
     // Get receipt ID from request
-    const { receiptId } = await req.json();
+    const body = await req.json();
+    receiptId = body.receiptId;
     
     if (!receiptId) {
       throw new Error('Receipt ID is required');
@@ -200,9 +203,8 @@ Importante:
     console.error('Error processing receipt:', error);
 
     // Try to update receipt with error status
-    if (req.json) {
+    if (receiptId) {
       try {
-        const { receiptId } = await req.json();
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);

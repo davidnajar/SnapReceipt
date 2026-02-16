@@ -20,6 +20,9 @@ export class HomePage implements OnInit, OnDestroy {
   hasGeminiKey = false;
   currentReceiptId: string | null = null;
   processingStatus: string = '';
+  
+  // Delay before navigating to receipts page after successful processing
+  private readonly NAVIGATION_DELAY_MS = 1500;
 
   constructor(
     private cameraService: CameraService,
@@ -189,7 +192,7 @@ export class HomePage implements OnInit, OnDestroy {
           // Navigate to receipts page to see the result
           setTimeout(() => {
             this.router.navigate(['/receipts']);
-          }, 1500);
+          }, this.NAVIGATION_DELAY_MS);
         } else if (receipt.status === 'error') {
           this.processingStatus = 'error';
           this.isProcessing = false;

@@ -7,6 +7,10 @@ SnapReceipt es una aplicación móvil desarrollada con Ionic/Angular que permite
 - 🔐 **Autenticación**: Sistema completo de registro e inicio de sesión con Supabase Auth
 - 📸 **Captura de Recibos**: Usa la cámara nativa del dispositivo para capturar fotos de tickets
 - 🤖 **Extracción Automática**: Utiliza Gemini 1.5 Flash AI para extraer datos estructurados (fecha, total, comercio, items, categoría)
+- 💰 **Soporte Multi-Moneda**: Detecta automáticamente la moneda del recibo (EUR, USD, MXN, etc.)
+- 🏷️ **Categorías por Artículo**: Asigna múltiples categorías a cada artículo del recibo con chips visuales
+- 📝 **Resumen IA**: Genera automáticamente un resumen descriptivo de cada recibo
+- 📊 **Reportes y Estadísticas**: Página de reportes con filtros, agrupaciones y análisis de gastos
 - 💾 **Almacenamiento Seguro**: Guarda los datos y las imágenes en Supabase con aislamiento por usuario
 - 🔑 **API Keys Personales**: Cada usuario configura su propia API key de Gemini
 - ⚙️ **Configuración**: Página de ajustes para gestionar preferencias y API keys
@@ -71,8 +75,10 @@ Antes de comenzar, asegúrate de tener instalado:
    
    b. Aplica las migraciones de base de datos:
    - Ve a la carpeta `supabase/migrations/`
-   - Ejecuta cada archivo SQL en orden (001, 002, 003, 004, 005) en el SQL Editor de Supabase
+   - Ejecuta cada archivo SQL en orden (001, 002, 003, 004, 005, 006, 007) en el SQL Editor de Supabase
    - Ver instrucciones detalladas en [supabase/README.md](supabase/README.md)
+   - La migración 006 añade soporte para procesamiento asíncrono y moneda
+   - La migración 007 añade el campo de resumen IA
    
    c. Crea un bucket de Storage llamado `receipts`:
    - Ve a Storage en el dashboard de Supabase
@@ -234,20 +240,24 @@ SnapReceipt/
 ### Receipt Interface
 ```typescript
 interface Receipt {
-  id?: string;                 // UUID generado por Supabase
-  date: string;               // Fecha en formato YYYY-MM-DD
-  total: number;              // Monto total
-  merchant: string;           // Nombre del comercio
-  items?: ReceiptItem[];      // Array de items (opcional)
-  category?: string;          // Categoría (groceries, restaurant, etc.)
-  imageUrl?: string;          // URL de la imagen en Supabase Storage
-  createdAt?: Date;           // Fecha de creación
+  id?: string;                    // UUID generado por Supabase
+  date: string;                  // Fecha en formato YYYY-MM-DD
+  total: number;                 // Monto total
+  currency?: string;             // Código de moneda (USD, EUR, MXN, etc.)
+  merchant: string;              // Nombre del comercio
+  items?: ReceiptItem[];         // Array de items (opcional)
+  category?: string;             // Categoría general (groceries, restaurant, etc.)
+  summary?: string;              // Resumen generado por IA
+  imageUrl?: string;             // URL de la imagen en Supabase Storage
+  status?: 'processing' | 'completed' | 'error'; // Estado del procesamiento
+  createdAt?: Date;              // Fecha de creación
 }
 
 interface ReceiptItem {
-  name: string;               // Nombre del producto
-  price: number;              // Precio unitario
-  quantity: number;           // Cantidad
+  name: string;                  // Nombre del producto
+  price: number;                 // Precio unitario
+  quantity: number;              // Cantidad
+  categories?: string[];         // Múltiples categorías por artículo
 }
 ```
 
@@ -262,6 +272,9 @@ Gestiona la captura de fotos usando Capacitor Camera:
 ### GeminiService
 Maneja la comunicación con Google Gemini AI:
 - `extractReceiptData(base64Image)`: Envía imagen y recibe datos estructurados en JSON
+  - Detecta automáticamente la moneda del recibo
+  - Asigna múltiples categorías a cada artículo
+  - Genera un resumen descriptivo del recibo
 - `isConfigured()`: Verifica si la API key está configurada
 
 ### SupabaseService
@@ -270,6 +283,17 @@ Gestiona el almacenamiento en Supabase:
 - `saveReceipt(receipt)`: Guarda datos en la tabla
 - `getReceipts()`: Obtiene todos los recibos guardados
 - `isConfigured()`: Verifica si las credenciales están configuradas
+
+### CategoryHelper
+Gestiona categorías y su visualización:
+- `getCategoryColor(category)`: Obtiene el color de una categoría para chips
+- `getCategoryIcon(category)`: Obtiene el icono de una categoría
+
+### CurrencyHelper
+Gestiona el formato de monedas:
+- `getCurrencySymbol(currency)`: Obtiene el símbolo de una moneda
+- `formatAmount(amount, currency)`: Formatea un monto con su símbolo de moneda
+- Soporta múltiples monedas: USD, EUR, GBP, MXN, CAD, AUD, CHF, CNY, INR, BRL, ARS, COP, CLP, PEN, UYU
 
 ## Solución de Problemas
 
@@ -296,14 +320,20 @@ Gestiona el almacenamiento en Supabase:
 
 ## Próximas Características
 
-- [ ] Lista de recibos guardados
-- [ ] Búsqueda y filtrado de recibos
+- [x] Lista de recibos guardados
+- [x] Búsqueda y filtrado de recibos
+- [x] Estadísticas y gráficos de gastos
+- [x] Soporte multi-moneda
+- [x] Categorías múltiples por artículo
+- [x] Resumen IA de recibos
+- [x] Página de reportes con filtros y agrupaciones
 - [ ] Edición manual de datos extraídos
-- [ ] Estadísticas y gráficos de gastos
+- [ ] Edición de categorías en la UI (añadir/quitar chips)
 - [ ] Exportación a PDF/CSV
 - [ ] Modo offline con sincronización
 - [ ] Soporte para múltiples idiomas
 - [ ] Compartir recibos con otros usuarios
+- [ ] Gráficos visuales en reportes (charts)
 
 ## Contribuir
 

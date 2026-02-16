@@ -1,0 +1,214 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/receipts"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reportes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Reportes</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Filters Card -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Filtros</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <!-- Date Range -->
+      <ion-item>
+        <ion-label position="stacked">Fecha Inicio</ion-label>
+        <ion-datetime-button datetime="start-date"></ion-datetime-button>
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime 
+              id="start-date" 
+              presentation="date"
+              [(ngModel)]="startDate"
+              (ionChange)="onFilterChange()">
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Fecha Fin</ion-label>
+        <ion-datetime-button datetime="end-date"></ion-datetime-button>
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime 
+              id="end-date" 
+              presentation="date"
+              [(ngModel)]="endDate"
+              (ionChange)="onFilterChange()">
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </ion-item>
+
+      <!-- Merchant Filter -->
+      <ion-item>
+        <ion-label>Establecimiento</ion-label>
+        <ion-select 
+          [(ngModel)]="selectedMerchant" 
+          (ionChange)="onFilterChange()"
+          interface="popover">
+          <ion-select-option value="all">Todos</ion-select-option>
+          <ion-select-option 
+            *ngFor="let merchant of merchants" 
+            [value]="merchant">
+            {{ merchant }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Category Filter -->
+      <ion-item>
+        <ion-label>Categoría</ion-label>
+        <ion-select 
+          [(ngModel)]="selectedCategory" 
+          (ionChange)="onFilterChange()"
+          interface="popover">
+          <ion-select-option value="all">Todas</ion-select-option>
+          <ion-select-option 
+            *ngFor="let category of categories" 
+            [value]="category">
+            {{ category }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Group By -->
+      <ion-item>
+        <ion-label>Agrupar por</ion-label>
+        <ion-select 
+          [(ngModel)]="groupBy" 
+          (ionChange)="onFilterChange()"
+          interface="popover">
+          <ion-select-option value="day">Día</ion-select-option>
+          <ion-select-option value="week">Semana</ion-select-option>
+          <ion-select-option value="month">Mes</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Total Spending Card -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Gasto Total</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="total-spending">
+        <h1>{{ formatAmount(totalSpending) }}</h1>
+        <p>{{ filteredReceipts.length }} recibos</p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Category Breakdown -->
+  <ion-card *ngIf="categoryTotals.length > 0">
+    <ion-card-header>
+      <ion-card-title>Gasto por Categoría</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let item of categoryTotals" lines="full">
+          <ion-chip 
+            slot="start" 
+            [color]="getCategoryColor(item.category)">
+            <ion-icon [name]="getCategoryIcon(item.category)"></ion-icon>
+            <ion-label>{{ item.category }}</ion-label>
+          </ion-chip>
+          <ion-label>
+            <div class="stat-row">
+              <div class="stat-amount">{{ formatAmount(item.total) }}</div>
+              <div class="stat-details">
+                <ion-text color="medium">{{ item.count }} items</ion-text>
+              </div>
+            </div>
+            <ion-progress-bar 
+              [value]="getPercentage(item.total) / 100"
+              [color]="getCategoryColor(item.category)">
+            </ion-progress-bar>
+            <ion-text color="medium" class="percentage">
+              {{ getPercentage(item.total).toFixed(1) }}%
+            </ion-text>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Merchant Breakdown -->
+  <ion-card *ngIf="merchantTotals.length > 0">
+    <ion-card-header>
+      <ion-card-title>Gasto por Establecimiento</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let item of merchantTotals" lines="full">
+          <ion-label>
+            <h3>{{ item.merchant }}</h3>
+            <div class="stat-row">
+              <div class="stat-amount">{{ formatAmount(item.total) }}</div>
+              <div class="stat-details">
+                <ion-text color="medium">{{ item.count }} recibos</ion-text>
+              </div>
+            </div>
+            <ion-progress-bar 
+              [value]="getPercentage(item.total) / 100"
+              color="primary">
+            </ion-progress-bar>
+            <ion-text color="medium" class="percentage">
+              {{ getPercentage(item.total).toFixed(1) }}%
+            </ion-text>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Date Group Breakdown -->
+  <ion-card *ngIf="dateGroupTotals.length > 0">
+    <ion-card-header>
+      <ion-card-title>Gasto por Período</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let item of dateGroupTotals" lines="full">
+          <ion-label>
+            <h3>{{ item.period }}</h3>
+            <div class="stat-row">
+              <div class="stat-amount">{{ formatAmount(item.total) }}</div>
+              <div class="stat-details">
+                <ion-text color="medium">{{ item.count }} recibos</ion-text>
+              </div>
+            </div>
+            <ion-progress-bar 
+              [value]="getPercentage(item.total) / 100"
+              color="tertiary">
+            </ion-progress-bar>
+            <ion-text color="medium" class="percentage">
+              {{ getPercentage(item.total).toFixed(1) }}%
+            </ion-text>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Empty state -->
+  <ion-card *ngIf="filteredReceipts.length === 0 && !isLoading">
+    <ion-card-content class="empty-state">
+      <ion-icon name="analytics-outline" class="empty-icon"></ion-icon>
+      <h2>No hay datos</h2>
+      <p>No se encontraron recibos con los filtros seleccionados</p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -322,6 +322,7 @@ export class SupabaseService {
         storage_path: string | null;
         error_message: string | null;
         currency: string | null;
+        summary: string | null;
       }) => ({
         id: item.id,
         date: item.date,
@@ -334,7 +335,8 @@ export class SupabaseService {
         status: (item.status as 'processing' | 'completed' | 'error') || 'completed',
         storagePath: item.storage_path || undefined,
         errorMessage: item.error_message || undefined,
-        currency: item.currency || undefined
+        currency: item.currency || undefined,
+        summary: item.summary || undefined
       }));
     } catch (error) {
       console.error('Error fetching receipts:', error);

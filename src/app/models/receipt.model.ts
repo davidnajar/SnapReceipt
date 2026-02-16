@@ -2,7 +2,8 @@ export interface ReceiptItem {
   name: string;
   price: number;
   quantity: number;
-  category?: string; // Category tag like food, beverages, clothing, electronics, etc.
+  category?: string; // Legacy: Single category (for backwards compatibility)
+  categories?: string[]; // Multiple categories per item
 }
 
 export interface Receipt {
@@ -18,4 +19,5 @@ export interface Receipt {
   storagePath?: string;
   errorMessage?: string;
   currency?: string;
+  summary?: string; // AI-generated summary of the receipt
 }

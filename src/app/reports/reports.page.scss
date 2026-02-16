@@ -1,0 +1,63 @@
+.total-spending {
+  text-align: center;
+  padding: 20px;
+
+  h1 {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--ion-color-primary);
+    margin: 10px 0;
+  }
+
+  p {
+    font-size: 1.1em;
+    color: var(--ion-color-medium);
+    margin: 5px 0;
+  }
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+
+  .stat-amount {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  .stat-details {
+    font-size: 0.9em;
+  }
+}
+
+ion-progress-bar {
+  margin: 8px 0;
+}
+
+.percentage {
+  font-size: 0.85em;
+  display: block;
+  margin-top: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ion-color-medium);
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 15px;
+  }
+
+  h2 {
+    margin: 10px 0;
+  }
+
+  p {
+    margin: 5px 0;
+  }
+}

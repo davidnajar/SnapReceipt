@@ -14,6 +14,7 @@ interface ReceiptItem {
   descripcion: string;
   cantidad: number;
   precio_unitario: number;
+  categories?: string[];
 }
 
 interface GeminiResponse {
@@ -22,6 +23,7 @@ interface GeminiResponse {
   total: number;
   moneda: string;
   items: ReceiptItem[];
+  summary?: string;
 }
 
 serve(async (req) => {
@@ -94,14 +96,16 @@ serve(async (req) => {
   "comercio": "nombre del comercio/tienda",
   "fecha": "fecha en formato ISO 8601 (YYYY-MM-DD)",
   "total": número (solo el número, sin símbolo de moneda),
-  "moneda": "código de moneda (USD, EUR, MXN, etc.)",
+  "moneda": "código de moneda (USD, EUR, MXN, GBP, etc.)",
   "items": [
     {
       "descripcion": "nombre del producto/servicio",
       "cantidad": número,
-      "precio_unitario": número
+      "precio_unitario": número,
+      "categories": ["categoria1", "categoria2"]
     }
-  ]
+  ],
+  "summary": "resumen breve generado por IA (ej: 'Compra semanal de comida', 'Compra de muebles', 'Cena en restaurante')"
 }
 
 Importante:
@@ -109,7 +113,11 @@ Importante:
 - Si no encuentras un campo, usa null
 - Para la fecha, extrae en formato YYYY-MM-DD, si falta el año usa el año actual
 - Para el total, extrae el monto final como número
+- Para la moneda, detecta la moneda del ticket (busca símbolos como €, $, £, o códigos de moneda). Si no es claro, usa USD
 - Para items, extrae todos los que puedas identificar
+- Para cada item, asigna una o más categorías de: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other
+- Los items pueden tener múltiples categorías (ej: champú podría ser ["personal-care", "health"])
+- Para summary, genera una breve descripción en lenguaje natural de lo que representa este ticket
 - Sé lo más preciso posible`;
 
     const geminiResponse = await fetch(
@@ -171,6 +179,7 @@ Importante:
       name: item.descripcion,
       price: item.precio_unitario,
       quantity: item.cantidad,
+      categories: item.categories || [],
     })) || [];
 
     // Update receipt with extracted data
@@ -183,6 +192,7 @@ Importante:
         total: extractedData.total || 0,
         currency: extractedData.moneda || 'USD',
         items: items,
+        summary: extractedData.summary || null,
         error_message: null,
         updated_at: new Date().toISOString(),
       })

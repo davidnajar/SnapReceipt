@@ -2,6 +2,7 @@ export interface ReceiptItem {
   name: string;
   price: number;
   quantity: number;
+  category?: string; // Category tag like food, beverages, clothing, electronics, etc.
 }
 
 export interface Receipt {

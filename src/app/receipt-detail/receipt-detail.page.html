@@ -1,0 +1,79 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/receipts"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detalle del Recibo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div *ngIf="receipt" class="receipt-container">
+    <!-- Receipt Image -->
+    <div class="image-container" *ngIf="receipt.imageUrl">
+      <img [src]="receipt.imageUrl" alt="Receipt image" />
+    </div>
+
+    <!-- Receipt Summary Card -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>{{ receipt.merchant }}</ion-card-title>
+        <ion-card-subtitle>{{ receipt.date }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="summary-row">
+          <span class="label">Total:</span>
+          <span class="total-amount">${{ receipt.total.toFixed(2) }}</span>
+        </div>
+        <div class="summary-row" *ngIf="receipt.category">
+          <span class="label">Categoría:</span>
+          <ion-chip [color]="getCategoryColor(receipt.category)">
+            <ion-icon [name]="getCategoryIcon(receipt.category)"></ion-icon>
+            <ion-label>{{ receipt.category }}</ion-label>
+          </ion-chip>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Items List -->
+    <ion-card *ngIf="receipt.items && receipt.items.length > 0">
+      <ion-card-header>
+        <ion-card-title>Artículos ({{ receipt.items.length }})</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let item of receipt.items" lines="full">
+            <ion-label>
+              <h3>{{ item.name }}</h3>
+              <p>Cantidad: {{ item.quantity }}</p>
+              <ion-chip 
+                *ngIf="item.category" 
+                [color]="getCategoryColor(item.category)"
+                class="item-category-chip">
+                <ion-icon [name]="getCategoryIcon(item.category)"></ion-icon>
+                <ion-label>{{ item.category }}</ion-label>
+              </ion-chip>
+            </ion-label>
+            <ion-note slot="end" class="item-price">
+              ${{ item.price.toFixed(2) }}
+            </ion-note>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- No items message -->
+    <ion-card *ngIf="!receipt.items || receipt.items.length === 0">
+      <ion-card-content class="no-items">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <p>No hay artículos detallados para este recibo</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Cargando detalles...</p>
+  </div>
+</ion-content>

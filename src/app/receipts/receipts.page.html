@@ -1,0 +1,63 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Mis Recibos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Mis Recibos</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Empty state -->
+  <div *ngIf="receipts.length === 0 && !isLoading" class="empty-state">
+    <ion-icon name="receipt-outline" class="empty-icon"></ion-icon>
+    <h2>No hay recibos</h2>
+    <p>Captura tu primer recibo desde la página principal</p>
+    <ion-button (click)="goToHome()" fill="outline">
+      <ion-icon slot="start" name="camera"></ion-icon>
+      Capturar Recibo
+    </ion-button>
+  </div>
+
+  <!-- Receipts list -->
+  <ion-list *ngIf="receipts.length > 0">
+    <ion-item 
+      *ngFor="let receipt of receipts" 
+      button 
+      (click)="viewReceipt(receipt)"
+      detail="true">
+      <ion-thumbnail slot="start" *ngIf="receipt.imageUrl">
+        <img [src]="receipt.imageUrl" alt="Receipt image" />
+      </ion-thumbnail>
+      <ion-thumbnail slot="start" *ngIf="!receipt.imageUrl">
+        <div class="placeholder-thumbnail">
+          <ion-icon name="receipt-outline"></ion-icon>
+        </div>
+      </ion-thumbnail>
+      <ion-label>
+        <h2>{{ receipt.merchant }}</h2>
+        <p>{{ receipt.date }}</p>
+        <p class="receipt-total">${{ receipt.total.toFixed(2) }}</p>
+        <ion-chip 
+          *ngIf="receipt.category" 
+          [color]="getCategoryColor(receipt.category)"
+          class="category-chip">
+          <ion-label>{{ receipt.category }}</ion-label>
+        </ion-chip>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="goToHome()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

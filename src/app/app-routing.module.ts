@@ -31,6 +31,16 @@ const routes: Routes = [
     loadChildren: () => import('./gemini-guide/gemini-guide.module').then( m => m.GeminiGuidePageModule),
     canActivate: [AuthGuard]
   },
+  {
+    path: 'receipts',
+    loadChildren: () => import('./receipts/receipts.module').then( m => m.ReceiptsPageModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'receipt-detail/:id',
+    loadChildren: () => import('./receipt-detail/receipt-detail.module').then( m => m.ReceiptDetailPageModule),
+    canActivate: [AuthGuard]
+  },
 ];
 
 @NgModule({

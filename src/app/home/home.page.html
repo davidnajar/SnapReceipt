@@ -4,6 +4,9 @@
       SnapReceipt
     </ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="goToReceipts()">
+        <ion-icon slot="icon-only" name="list-outline"></ion-icon>
+      </ion-button>
       <ion-button (click)="goToSettings()">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
@@ -32,6 +35,14 @@
         class="ion-margin-top">
         <ion-icon slot="start" name="key-outline"></ion-icon>
         Configura tu API Key de Gemini
+      </ion-button>
+      <ion-button 
+        expand="block"
+        fill="solid"
+        (click)="goToReceipts()"
+        class="ion-margin-top">
+        <ion-icon slot="start" name="list-outline"></ion-icon>
+        Ver Mis Recibos
       </ion-button>
     </div>
 

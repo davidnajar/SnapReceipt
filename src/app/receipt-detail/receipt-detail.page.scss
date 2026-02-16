@@ -28,12 +28,21 @@
   .label {
     font-weight: 500;
     color: var(--ion-color-medium);
+    margin-right: 12px;
+    flex-shrink: 0;
   }
 
   .total-amount {
     font-size: 1.5em;
     font-weight: bold;
     color: var(--ion-color-primary);
+  }
+
+  .summary-text {
+    font-style: italic;
+    color: var(--ion-color-dark);
+    text-align: right;
+    flex: 1;
   }
 }
 
@@ -45,8 +54,16 @@
 
 .item-category-chip {
   margin-top: 4px;
+  margin-right: 4px;
   font-size: 0.85em;
   height: 24px;
+}
+
+.item-categories {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  gap: 4px;
 }
 
 .no-items {

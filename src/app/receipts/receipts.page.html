@@ -43,7 +43,7 @@
       <ion-label>
         <h2>{{ receipt.merchant }}</h2>
         <p>{{ receipt.date }}</p>
-        <p class="receipt-total">${{ receipt.total.toFixed(2) }}</p>
+        <p class="receipt-total">{{ formatAmount(receipt.total, receipt.currency) }}</p>
         <ion-chip 
           *ngIf="receipt.category" 
           [color]="getCategoryColor(receipt.category)"

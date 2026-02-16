@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase.service';
 import { CategoryHelper } from '../services/category-helper';
+import { CurrencyHelper } from '../services/currency-helper';
 import { Receipt, ReceiptItem } from '../models/receipt.model';
 
 @Component({
@@ -20,6 +21,7 @@ export class ReceiptDetailPage implements OnInit {
     private router: Router,
     private supabaseService: SupabaseService,
     private categoryHelper: CategoryHelper,
+    private currencyHelper: CurrencyHelper,
     private loadingController: LoadingController,
     private alertController: AlertController
   ) { }
@@ -81,6 +83,26 @@ export class ReceiptDetailPage implements OnInit {
    */
   getCategoryIcon(category?: string): string {
     return this.categoryHelper.getCategoryIcon(category);
+  }
+
+  /**
+   * Format amount with currency symbol
+   */
+  formatAmount(amount: number, currency?: string): string {
+    return this.currencyHelper.formatAmount(amount, currency);
+  }
+
+  /**
+   * Get item categories (supports both legacy single category and new multiple categories)
+   */
+  getItemCategories(item: ReceiptItem): string[] {
+    if (item.categories && item.categories.length > 0) {
+      return item.categories;
+    }
+    if (item.category) {
+      return [item.category];
+    }
+    return [];
   }
 
   /**

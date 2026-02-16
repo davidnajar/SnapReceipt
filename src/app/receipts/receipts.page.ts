@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase.service';
 import { CategoryHelper } from '../services/category-helper';
+import { CurrencyHelper } from '../services/currency-helper';
 import { Receipt } from '../models/receipt.model';
 
 @Component({
@@ -18,6 +19,7 @@ export class ReceiptsPage implements OnInit {
   constructor(
     private supabaseService: SupabaseService,
     private categoryHelper: CategoryHelper,
+    private currencyHelper: CurrencyHelper,
     private router: Router,
     private loadingController: LoadingController,
     private alertController: AlertController
@@ -74,6 +76,13 @@ export class ReceiptsPage implements OnInit {
    */
   getCategoryColor(category?: string): string {
     return this.categoryHelper.getCategoryColor(category);
+  }
+
+  /**
+   * Format amount with currency symbol
+   */
+  formatAmount(amount: number, currency?: string): string {
+    return this.currencyHelper.formatAmount(amount, currency);
   }
 
   /**

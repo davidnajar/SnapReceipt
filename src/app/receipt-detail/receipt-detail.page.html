@@ -23,7 +23,7 @@
       <ion-card-content>
         <div class="summary-row">
           <span class="label">Total:</span>
-          <span class="total-amount">${{ receipt.total.toFixed(2) }}</span>
+          <span class="total-amount">{{ formatAmount(receipt.total, receipt.currency) }}</span>
         </div>
         <div class="summary-row" *ngIf="receipt.category">
           <span class="label">Categoría:</span>
@@ -31,6 +31,10 @@
             <ion-icon [name]="getCategoryIcon(receipt.category)"></ion-icon>
             <ion-label>{{ receipt.category }}</ion-label>
           </ion-chip>
+        </div>
+        <div class="summary-row" *ngIf="receipt.summary">
+          <span class="label">Resumen IA:</span>
+          <span class="summary-text">{{ receipt.summary }}</span>
         </div>
       </ion-card-content>
     </ion-card>
@@ -46,16 +50,18 @@
             <ion-label>
               <h3>{{ item.name }}</h3>
               <p>Cantidad: {{ item.quantity }}</p>
-              <ion-chip 
-                *ngIf="item.category" 
-                [color]="getCategoryColor(item.category)"
-                class="item-category-chip">
-                <ion-icon [name]="getCategoryIcon(item.category)"></ion-icon>
-                <ion-label>{{ item.category }}</ion-label>
-              </ion-chip>
+              <div class="item-categories">
+                <ion-chip 
+                  *ngFor="let category of getItemCategories(item)" 
+                  [color]="getCategoryColor(category)"
+                  class="item-category-chip">
+                  <ion-icon [name]="getCategoryIcon(category)"></ion-icon>
+                  <ion-label>{{ category }}</ion-label>
+                </ion-chip>
+              </div>
             </ion-label>
             <ion-note slot="end" class="item-price">
-              ${{ item.price.toFixed(2) }}
+              {{ formatAmount(item.price, receipt.currency) }}
             </ion-note>
           </ion-item>
         </ion-list>

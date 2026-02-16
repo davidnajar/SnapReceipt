@@ -99,9 +99,11 @@ export class GeminiService {
       {
         "date": "YYYY-MM-DD format",
         "total": number (just the number, no currency symbol),
+        "currency": "currency code (USD, EUR, MXN, GBP, etc.)",
         "merchant": "store/merchant name",
-        "items": [{"name": "item name", "price": number, "quantity": number, "category": "category"}],
-        "category": "general category like groceries, restaurant, shopping, etc."
+        "items": [{"name": "item name", "price": number, "quantity": number, "categories": ["category1", "category2"]}],
+        "category": "general category like groceries, restaurant, shopping, etc.",
+        "summary": "brief AI-generated summary (e.g., 'Weekly grocery shopping', 'Furniture purchase', 'Restaurant dinner')"
       }
       
       Important:
@@ -109,9 +111,12 @@ export class GeminiService {
       - If you can't find a field, use null
       - For date, try to extract in YYYY-MM-DD format, if year is missing, use current year
       - For total, extract the final total amount as a number
+      - For currency, detect the currency from the receipt (look for symbols like €, $, £, or currency codes). If not clear, use USD
       - For items, extract as many as you can identify
-      - For each item, assign a category from: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, other
-      - Categorize items based on their nature (e.g., "milk" -> "beverages", "bread" -> "food", "shirt" -> "clothing")
+      - For each item, assign one or more categories from: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other
+      - Items can have multiple categories (e.g., shampoo could be ["personal-care", "health"])
+      - Categorize items based on their nature (e.g., "milk" -> ["beverages"], "bread" -> ["food"], "multivitamin" -> ["health", "personal-care"])
+      - For summary, generate a brief, natural language description of what this receipt represents
       - Be as accurate as possible`;
 
       // Prepare image data for Gemini

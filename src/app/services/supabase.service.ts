@@ -331,7 +331,7 @@ export class SupabaseService {
         category: item.category || undefined,
         imageUrl: item.image_url || undefined,
         createdAt: new Date(item.created_at),
-        status: item.status || 'completed',
+        status: (item.status as 'processing' | 'completed' | 'error') || 'completed',
         storagePath: item.storage_path || undefined,
         errorMessage: item.error_message || undefined,
         currency: item.currency || undefined

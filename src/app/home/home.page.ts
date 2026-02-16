@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { LoadingController, AlertController, ToastController } from '@ionic/angular';
 import { CameraService } from '../services/camera.service';
 import { GeminiService } from '../services/gemini.service';
 import { SupabaseService } from '../services/supabase.service';
+import { ReceiptService } from '../services/receipt.service';
 import { Receipt } from '../models/receipt.model';
 
 @Component({
@@ -12,16 +13,22 @@ import { Receipt } from '../models/receipt.model';
   styleUrls: ['./home.page.scss'],
   standalone: false
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   capturedImage: string | null = null;
   extractedData: Partial<Receipt> | null = null;
   isProcessing = false;
   hasGeminiKey = false;
+  currentReceiptId: string | null = null;
+  processingStatus: string = '';
+  
+  // Delay before navigating to receipts page after successful processing
+  private readonly NAVIGATION_DELAY_MS = 1500;
 
   constructor(
     private cameraService: CameraService,
     private geminiService: GeminiService,
     private supabaseService: SupabaseService,
+    private receiptService: ReceiptService,
     private router: Router,
     private loadingController: LoadingController,
     private alertController: AlertController,
@@ -31,6 +38,11 @@ export class HomePage implements OnInit {
   async ngOnInit() {
     await this.loadUserSettings();
     await this.checkConfiguration();
+  }
+
+  ngOnDestroy() {
+    // Cleanup subscriptions
+    this.receiptService.unsubscribeAll();
   }
 
   async ionViewWillEnter() {
@@ -141,122 +153,89 @@ export class HomePage implements OnInit {
   }
 
   /**
-   * Processes the captured receipt image
+   * Processes the captured receipt image using async flow
    * @param base64Image Base64 encoded image
    */
   private async processReceipt(base64Image: string) {
     const loading = await this.loadingController.create({
-      message: 'Processing receipt...'
+      message: 'Uploading receipt...'
     });
     await loading.present();
 
     this.isProcessing = true;
+    this.processingStatus = 'uploading';
 
     try {
-      // Step 1: Extract data using Gemini AI
-      this.extractedData = await this.geminiService.extractReceiptData(base64Image);
-      
+      // Convert base64 to blob
+      const blob = this.base64ToBlob(base64Image);
+
+      // Upload and start processing
+      const receiptId = await this.receiptService.uploadAndProcess(blob);
+      this.currentReceiptId = receiptId;
+
       await loading.dismiss();
+
+      // Show toast that processing started
+      await this.showSuccess('Receipt uploaded! Processing in background...');
+
+      // Subscribe to real-time updates
+      this.processingStatus = 'processing';
+      this.receiptService.subscribeToReceipt(receiptId, async (receipt) => {
+        if (receipt.status === 'completed') {
+          this.processingStatus = 'completed';
+          this.isProcessing = false;
+          this.extractedData = receipt;
+          
+          // Show success notification
+          await this.showSuccess('Receipt processed successfully!');
+          
+          // Navigate to receipts page to see the result
+          setTimeout(() => {
+            this.router.navigate(['/receipts']);
+          }, this.NAVIGATION_DELAY_MS);
+        } else if (receipt.status === 'error') {
+          this.processingStatus = 'error';
+          this.isProcessing = false;
+          
+          // Show error notification
+          await this.showError(`Processing failed: ${receipt.errorMessage || 'Unknown error'}`);
+        }
+      });
+
+      // User can navigate away while processing
+      this.capturedImage = null;
       
-      // Step 2: Show confirmation dialog with extracted data
-      const confirmed = await this.showConfirmation();
-      
-      if (confirmed) {
-        // Step 3: Save to Supabase
-        await this.saveReceipt(base64Image);
-      }
     } catch (error) {
       console.error('Error processing receipt:', error);
       await loading.dismiss();
-      await this.showError('Failed to process receipt. Please try again.');
-    } finally {
       this.isProcessing = false;
+      this.processingStatus = 'error';
+      await this.showError('Failed to upload receipt. Please try again.');
     }
   }
 
   /**
-   * Saves the receipt to Supabase
-   * @param base64Image Base64 encoded image
+   * Helper method to convert base64 to Blob
+   * @param base64 Base64 encoded string
+   * @returns Blob object
    */
-  private async saveReceipt(base64Image: string) {
-    const loading = await this.loadingController.create({
-      message: 'Saving receipt...'
-    });
-    await loading.present();
+  private base64ToBlob(base64: string): Blob {
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
 
-    try {
-      // Generate unique filename
-      const fileName = `receipt_${Date.now()}.jpg`;
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512);
+      const byteNumbers = new Array(slice.length);
       
-      // Upload image
-      const imageUrl = await this.supabaseService.uploadReceiptImage(base64Image, fileName);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
       
-      // Prepare receipt data
-      const receipt: Receipt = {
-        date: this.extractedData?.date || new Date().toISOString().split('T')[0],
-        total: this.extractedData?.total || 0,
-        merchant: this.extractedData?.merchant || 'Unknown',
-        items: this.extractedData?.items,
-        category: this.extractedData?.category,
-        imageUrl: imageUrl
-      };
-
-      // Save to database
-      await this.supabaseService.saveReceipt(receipt);
-      
-      await loading.dismiss();
-      
-      // Show success message
-      await this.showSuccess('Receipt saved successfully!');
-      
-      // Navigate to receipts page
-      this.router.navigate(['/receipts']);
-      
-      // Reset state
-      this.capturedImage = null;
-      this.extractedData = null;
-    } catch (error) {
-      console.error('Error saving receipt:', error);
-      await loading.dismiss();
-      await this.showError('Failed to save receipt. Please try again.');
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
     }
-  }
 
-  /**
-   * Shows confirmation dialog with extracted data
-   * @returns Promise with boolean indicating if user confirmed
-   */
-  private async showConfirmation(): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: 'Receipt Data Extracted',
-        message: `
-          <strong>Merchant:</strong> ${this.extractedData?.merchant || 'N/A'}<br>
-          <strong>Date:</strong> ${this.extractedData?.date || 'N/A'}<br>
-          <strong>Total:</strong> $${this.extractedData?.total?.toFixed(2) || '0.00'}<br>
-          <strong>Category:</strong> ${this.extractedData?.category || 'N/A'}<br>
-          <strong>Items:</strong> ${this.extractedData?.items?.length || 0}
-        `,
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-            handler: () => {
-              this.capturedImage = null;
-              this.extractedData = null;
-              resolve(false);
-            }
-          },
-          {
-            text: 'Save',
-            handler: () => {
-              resolve(true);
-            }
-          }
-        ]
-      });
-      await alert.present();
-    });
+    return new Blob(byteArrays, { type: 'image/jpeg' });
   }
 
   /**

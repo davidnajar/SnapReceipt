@@ -14,4 +14,8 @@ export interface Receipt {
   category?: string;
   imageUrl?: string;
   createdAt?: Date;
+  status?: 'processing' | 'completed' | 'error';
+  storagePath?: string;
+  errorMessage?: string;
+  currency?: string;
 }

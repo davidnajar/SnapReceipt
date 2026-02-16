@@ -1,0 +1,195 @@
+name: Supabase Edge Functions
+
+on:
+  # Run on pushes to main/master branches (auto-deploy)
+  push:
+    branches: [main, master]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-functions.yml'
+  
+  # Run on pull requests (validation only)
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-functions.yml'
+  
+  # Allow manual deployment
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      deploy:
+        description: 'Deploy functions (not just validate)'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  validate:
+    name: Validate Edge Functions
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Check Edge Functions syntax
+        run: |
+          echo "🔍 Validating Edge Functions..."
+          
+          # Find all Edge Function index files
+          FUNCTIONS=$(find supabase/functions -name "index.ts" -type f)
+          
+          if [ -z "$FUNCTIONS" ]; then
+            echo "❌ No Edge Functions found!"
+            exit 1
+          fi
+          
+          echo "Found Edge Functions:"
+          echo "$FUNCTIONS" | sed 's|supabase/functions/||g' | sed 's|/index.ts||g'
+          echo ""
+          
+          # Validate each function
+          EXIT_CODE=0
+          for func in $FUNCTIONS; do
+            FUNC_NAME=$(dirname "$func" | xargs basename)
+            echo "Validating $FUNC_NAME..."
+            
+            # Check TypeScript syntax
+            if deno check "$func"; then
+              echo "✅ $FUNC_NAME: Syntax OK"
+            else
+              echo "❌ $FUNC_NAME: Syntax errors found"
+              EXIT_CODE=1
+            fi
+            echo ""
+          done
+          
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ All Edge Functions validated successfully!"
+          else
+            echo "❌ Some Edge Functions have errors"
+            exit 1
+          fi
+      
+      - name: List Edge Functions
+        run: |
+          echo "📋 Edge Functions in this repository:"
+          find supabase/functions -type d -mindepth 1 -maxdepth 1 -exec basename {} \;
+
+  deploy:
+    name: Deploy Edge Functions
+    runs-on: ubuntu-latest
+    needs: validate
+    
+    # Only deploy on:
+    # 1. Push to main/master branches
+    # 2. Manual workflow_dispatch with deploy=true
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
+    
+    permissions:
+      contents: read
+    
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Verify Supabase credentials
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            echo "❌ SUPABASE_ACCESS_TOKEN secret is not set!"
+            echo "Please add it to your repository secrets:"
+            echo "Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.SUPABASE_PROJECT_ID }}" ]; then
+            echo "❌ SUPABASE_PROJECT_ID secret is not set!"
+            echo "Please add it to your repository secrets:"
+            echo "Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          
+          echo "✅ Supabase credentials configured"
+      
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          echo "🚀 Deploying Edge Functions to Supabase..."
+          echo "Project ID: $SUPABASE_PROJECT_ID"
+          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo ""
+          
+          # Link to project
+          supabase link --project-ref $SUPABASE_PROJECT_ID
+          
+          # Find and deploy all functions
+          FUNCTIONS=$(find supabase/functions -type d -mindepth 1 -maxdepth 1 -exec basename {} \;)
+          
+          if [ -z "$FUNCTIONS" ]; then
+            echo "❌ No Edge Functions found to deploy!"
+            exit 1
+          fi
+          
+          EXIT_CODE=0
+          for func in $FUNCTIONS; do
+            echo "Deploying function: $func"
+            if supabase functions deploy $func --no-verify-jwt; then
+              echo "✅ Successfully deployed: $func"
+            else
+              echo "❌ Failed to deploy: $func"
+              EXIT_CODE=1
+            fi
+            echo ""
+          done
+          
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ All Edge Functions deployed successfully!"
+          else
+            echo "❌ Some Edge Functions failed to deploy"
+            exit 1
+          fi
+      
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "## 🎉 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Edge Functions have been deployed to Supabase." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ${{ secrets.SUPABASE_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Functions:" >> $GITHUB_STEP_SUMMARY
+          find supabase/functions -type d -mindepth 1 -maxdepth 1 -exec basename {} \; | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY

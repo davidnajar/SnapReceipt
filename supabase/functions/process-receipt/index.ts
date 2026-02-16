@@ -105,7 +105,7 @@ serve(async (req) => {
       "categories": ["categoria1", "categoria2"]
     }
   ],
-  "summary": "resumen breve generado por IA (ej: 'Compra semanal de comida', 'Compra de muebles', 'Cena en restaurante')"
+  "summary": "resumen breve generado por IA (ej: 'Compra semanal de comida', 'Compra de muebles', 'Cena en restaurante', 'etc')"
 }
 
 Importante:
@@ -113,7 +113,7 @@ Importante:
 - Si no encuentras un campo, usa null
 - Para la fecha, extrae en formato YYYY-MM-DD, si falta el año usa el año actual
 - Para el total, extrae el monto final como número
-- Para la moneda, detecta la moneda del ticket (busca símbolos como €, $, £, o códigos de moneda). Si no es claro, usa USD
+- Para la moneda, detecta la moneda del ticket (busca símbolos como €, $, £, o códigos de moneda). Si no es claro, usa EUR
 - Para items, extrae todos los que puedas identificar
 - Para cada item, asigna una o más categorías de: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other
 - Los items pueden tener múltiples categorías (ej: champú podría ser ["personal-care", "health"])
@@ -121,7 +121,7 @@ Importante:
 - Sé lo más preciso posible`;
 
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: {

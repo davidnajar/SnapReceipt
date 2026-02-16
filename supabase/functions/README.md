@@ -2,6 +2,35 @@
 
 This directory contains Supabase Edge Functions for SnapReceipt.
 
+## Automated Deployment
+
+This repository includes a GitHub Action that automatically validates and deploys Edge Functions:
+
+- ✅ **Automatic validation** on pull requests
+- 🚀 **Automatic deployment** on merge to main/master
+- 🎯 **Manual deployment** option with environment selection
+
+See [../.github/workflows/README.md](../../.github/workflows/README.md#3-supabase-edge-functions-supabase-functionsyml) for setup instructions.
+
+### Quick Setup
+
+To enable automatic deployment, configure these GitHub secrets:
+
+1. `SUPABASE_ACCESS_TOKEN` - Get from Supabase Dashboard → Account Settings → Access Tokens
+2. `SUPABASE_PROJECT_ID` - Get from Supabase Dashboard → Project Settings → Reference ID
+
+## Local Validation
+
+Before pushing changes, validate your functions locally:
+
+```bash
+# Run the validation script
+./supabase/functions/validate-functions.sh
+
+# Or manually with Deno
+deno check supabase/functions/process-receipt/index.ts
+```
+
 ## Functions
 
 ### process-receipt

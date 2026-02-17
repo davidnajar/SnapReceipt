@@ -153,6 +153,32 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   /**
+   * Handles selecting a photo from the gallery
+   */
+  async onSelectFromGallery() {
+    try {
+      // Select photo from gallery
+      const photo = await this.cameraService.selectFromGallery();
+      
+      if (photo && photo.base64String) {
+        this.capturedImage = photo.base64String;
+        
+        // Process the selected image
+        await this.processReceipt(photo.base64String);
+      }
+    } catch (error) {
+      console.error('Error selecting photo from gallery:', error);
+      
+      // Check if user cancelled
+      if (error instanceof Error && error.message && error.message.includes('cancelled')) {
+        return; // Don't show error if user cancelled
+      }
+      
+      await this.showError('Failed to select photo from gallery. Please try again.');
+    }
+  }
+
+  /**
    * Processes the captured receipt image using async flow
    * @param base64Image Base64 encoded image
    */

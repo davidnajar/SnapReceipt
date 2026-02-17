@@ -46,33 +46,6 @@ function extractAndCleanJSON(responseText: string): string {
   return cleaned;
 }
 
-async function triggerPriceComparison(supabase: any, receiptId: string) {
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/compare-prices`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify({ receiptId }),
-      }
-    );
-
-    if (!response.ok) {
-      console.error('Price comparison error:', await response.text());
-    } else {
-      console.log('Price comparison triggered successfully');
-    }
-  } catch (error) {
-    console.error('Error triggering price comparison:', error);
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -124,9 +97,9 @@ serve(async (req) => {
     Categorías: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other.
     IMPORTANTE: Genera un JSON completo y válido. No cortes la respuesta.`;
 
-    // CORRECCIÓN: Modelo gemini-2.0-flash
+    // RESTAURADO: gemini-2.5-flash
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userSettings.gemini_api_key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userSettings.gemini_api_key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +111,7 @@ serve(async (req) => {
             ]
           }],
           generationConfig: {
-            temperature: 0.2, // Bajamos temperatura para mayor precisión
+            temperature: 0.4,
             maxOutputTokens: 4096,
             responseMimeType: 'application/json',
           },
@@ -159,10 +132,11 @@ serve(async (req) => {
     try {
       extractedData = JSON.parse(cleanedResponse);
     } catch (parseError) {
-      // MEJORA: Log detallado del final del string para detectar cortes
-      console.error('JSON Parse Error. Longitud:', cleanedResponse.length);
-      console.error('Final del texto recibido:', cleanedResponse.slice(-100));
-      throw new Error(`JSON incompleto o malformado.`);
+      // Log para diagnosticar si el 2.5 vuelve a enviar JSON incompleto
+      console.error('Error al parsear JSON del modelo 2.5');
+      console.error('Longitud total:', cleanedResponse.length);
+      console.error('Últimos 150 caracteres:', cleanedResponse.slice(-150));
+      throw new Error(`JSON incompleto.`);
     }
 
     const items = extractedData.items?.map(item => ({
@@ -189,8 +163,6 @@ serve(async (req) => {
 
     if (updateError) throw new Error(`Update error: ${updateError.message}`);
 
-    triggerPriceComparison(supabase, receiptId).catch(console.error);
-
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -198,7 +170,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error.message);
-    // ... (Mantén tu lógica de actualización de error en base de datos aquí)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

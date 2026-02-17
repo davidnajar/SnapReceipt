@@ -71,10 +71,10 @@
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
     <ion-fab-list side="top">
-      <ion-fab-button (click)="onCapturePhoto()" [disabled]="isProcessing" title="Take Photo">
+      <ion-fab-button (click)="onCapturePhoto()" [disabled]="isProcessing" aria-label="Take Photo">
         <ion-icon name="camera"></ion-icon>
       </ion-fab-button>
-      <ion-fab-button (click)="onSelectFromGallery()" [disabled]="isProcessing" title="Select from Gallery">
+      <ion-fab-button (click)="onSelectFromGallery()" [disabled]="isProcessing" aria-label="Select from Gallery">
         <ion-icon name="images"></ion-icon>
       </ion-fab-button>
     </ion-fab-list>

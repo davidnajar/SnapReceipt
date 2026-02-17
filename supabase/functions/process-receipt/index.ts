@@ -27,36 +27,56 @@ interface GeminiResponse {
 
 function extractAndCleanJSON(responseText: string): string {
   let cleaned = responseText.trim();
-  
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\n?/g, '').replace(/```\n?$/g, '');
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\n?/g, '').replace(/```\n?$/g, '');
   }
-  
   cleaned = cleaned.trim();
-  
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[0];
-  }
-  
+  if (jsonMatch) cleaned = jsonMatch[0];
   cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
-  
   return cleaned;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+/**
+ * Triggers the next Edge Function to compare prices
+ */
+async function triggerPriceComparison(supabase: any, receiptId: string) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/compare-prices`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ receiptId }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Price comparison trigger failed:', await response.text());
+    } else {
+      console.log('Price comparison triggered successfully');
+    }
+  } catch (error) {
+    console.error('Error triggering price comparison:', error);
   }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   let receiptId: string | undefined;
 
   try {
     const body = await req.json();
     receiptId = body.receiptId;
-    
     if (!receiptId) throw new Error('Receipt ID is required');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -64,40 +84,23 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: receipt, error: receiptError } = await supabase
-      .from('receipts')
-      .select('*')
-      .eq('id', receiptId)
-      .single();
+      .from('receipts').select('*').eq('id', receiptId).single();
 
     if (receiptError || !receipt) throw new Error(`Receipt not found`);
 
     const { data: userSettings, error: settingsError } = await supabase
-      .from('user_settings')
-      .select('gemini_api_key')
-      .eq('user_id', receipt.user_id)
-      .single();
+      .from('user_settings').select('gemini_api_key').eq('user_id', receipt.user_id).single();
 
-    if (settingsError || !userSettings?.gemini_api_key) {
-      throw new Error('User Gemini API key not configured');
-    }
+    if (settingsError || !userSettings?.gemini_api_key) throw new Error('API key missing');
 
     const { data: imageData, error: downloadError } = await supabase.storage
-      .from('receipts')
-      .download(receipt.storage_path);
+      .from('receipts').download(receipt.storage_path);
 
-    if (downloadError || !imageData) throw new Error(`Failed to download image`);
+    if (downloadError || !imageData) throw new Error(`Download failed`);
 
     const arrayBuffer = await imageData.arrayBuffer();
-    const base64Image = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
+    const base64Image = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
 
-    const geminiPrompt = `Analiza esta imagen de ticket y extrae la información en JSON. 
-    Campos: comercio, fecha (YYYY-MM-DD), total (número), moneda (EUR/USD), items (descripcion, cantidad, precio_unitario, categories[]), summary.
-    Categorías: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other.
-    IMPORTANTE: Genera un JSON completo y válido. No cortes la respuesta.`;
-
-    // RESTAURADO: gemini-2.5-flash
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userSettings.gemini_api_key}`,
       {
@@ -106,38 +109,23 @@ serve(async (req) => {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: geminiPrompt },
+              { text: "Analiza el ticket y devuelve JSON con comercio, fecha, total, moneda, items y summary." },
               { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
             ]
           }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 4096,
-            responseMimeType: 'application/json',
-          },
+          generationConfig: { temperature: 0.4, responseMimeType: 'application/json' },
         }),
       }
     );
 
-    if (!geminiResponse.ok) throw new Error(`Gemini API error: ${await geminiResponse.text()}`);
+    if (!geminiResponse.ok) throw new Error(`Gemini Error: ${await geminiResponse.text()}`);
 
     const geminiData = await geminiResponse.json();
     const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!responseText) throw new Error('No response from Gemini');
+    if (!responseText) throw new Error('Empty Gemini response');
 
     const cleanedResponse = extractAndCleanJSON(responseText);
-
-    let extractedData: GeminiResponse;
-    try {
-      extractedData = JSON.parse(cleanedResponse);
-    } catch (parseError) {
-      // Log para diagnosticar si el 2.5 vuelve a enviar JSON incompleto
-      console.error('Error al parsear JSON del modelo 2.5');
-      console.error('Longitud total:', cleanedResponse.length);
-      console.error('Últimos 150 caracteres:', cleanedResponse.slice(-150));
-      throw new Error(`JSON incompleto.`);
-    }
+    const extractedData: GeminiResponse = JSON.parse(cleanedResponse);
 
     const items = extractedData.items?.map(item => ({
       name: item.descripcion,
@@ -146,22 +134,19 @@ serve(async (req) => {
       categories: item.categories || [],
     })) || [];
 
-    const { error: updateError } = await supabase
-      .from('receipts')
-      .update({
-        status: 'completed',
-        merchant: extractedData.comercio || 'Unknown',
-        date: extractedData.fecha || new Date().toISOString().split('T')[0],
-        total: extractedData.total || 0,
-        currency: extractedData.moneda || 'EUR',
-        items: items,
-        summary: extractedData.summary || null,
-        error_message: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', receiptId);
+    await supabase.from('receipts').update({
+      status: 'completed',
+      merchant: extractedData.comercio || 'Unknown',
+      date: extractedData.fecha,
+      total: extractedData.total,
+      currency: extractedData.moneda || 'EUR',
+      items: items,
+      summary: extractedData.summary,
+      updated_at: new Date().toISOString(),
+    }).eq('id', receiptId);
 
-    if (updateError) throw new Error(`Update error: ${updateError.message}`);
+    // DISPARADOR DE LA SIGUIENTE FUNCIÓN
+    triggerPriceComparison(supabase, receiptId).catch(console.error);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

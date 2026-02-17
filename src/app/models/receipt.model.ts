@@ -31,4 +31,6 @@ export interface Receipt {
   errorMessage?: string;
   currency?: string;
   summary?: string; // AI-generated summary of the receipt
+  priceComparisons?: Record<number, PriceComparison[]>; // Price comparison results from database
+  priceComparisonsUpdatedAt?: Date; // When price comparisons were last updated
 }

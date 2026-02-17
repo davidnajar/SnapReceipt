@@ -43,11 +43,7 @@
     <ion-card *ngIf="receipt.items && receipt.items.length > 0">
       <ion-card-header>
         <ion-card-title>Artículos ({{ receipt.items.length }})</ion-card-title>
-        <ion-card-subtitle *ngIf="isLoadingPriceComparisons">
-          <ion-spinner name="dots" color="primary"></ion-spinner>
-          Buscando mejores precios...
-        </ion-card-subtitle>
-        <ion-card-subtitle *ngIf="!isLoadingPriceComparisons && getTotalPotentialSavings() > 0" color="success">
+        <ion-card-subtitle *ngIf="getTotalPotentialSavings() > 0" color="success">
           <ion-icon name="trending-down"></ion-icon>
           Ahorro potencial: {{ formatAmount(getTotalPotentialSavings(), receipt.currency) }}
         </ion-card-subtitle>

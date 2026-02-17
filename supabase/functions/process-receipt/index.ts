@@ -26,6 +26,38 @@ interface GeminiResponse {
   summary?: string;
 }
 
+/**
+ * Trigger price comparison edge function asynchronously
+ */
+async function triggerPriceComparison(supabase: any, receiptId: string) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Call the compare-prices edge function
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/compare-prices`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ receiptId }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Price comparison error:', error);
+    } else {
+      console.log('Price comparison triggered successfully');
+    }
+  } catch (error) {
+    console.error('Error triggering price comparison:', error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -201,6 +233,13 @@ Importante:
     if (updateError) {
       throw new Error(`Failed to update receipt: ${updateError.message}`);
     }
+
+    // Trigger price comparison asynchronously (fire and forget)
+    // This runs in the background without blocking the response
+    triggerPriceComparison(supabase, receiptId).catch(error => {
+      console.error('Error triggering price comparison:', error);
+      // Don't fail the main process if price comparison fails
+    });
 
     return new Response(
       JSON.stringify({ success: true, receiptId }),

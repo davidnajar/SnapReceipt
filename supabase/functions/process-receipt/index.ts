@@ -180,7 +180,7 @@ Importante:
 - Para items, extrae todos los que puedas identificar
 - Para cada item, asigna una o más categorías de: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other
 - Los items pueden tener múltiples categorías (ej: champú podría ser ["personal-care", "health"])
-- Para summary, genera una breve descripción breve (máximo 50 caracteres) sin saltos de línea
+- Para summary, genera una descripción breve (máximo 50 caracteres) sin saltos de línea
 - Sé lo más preciso posible`;
 
     const geminiResponse = await fetch(

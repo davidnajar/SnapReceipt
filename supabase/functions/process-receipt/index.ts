@@ -27,6 +27,36 @@ interface GeminiResponse {
 }
 
 /**
+ * Extract and clean JSON from Gemini response text
+ * Handles various edge cases like markdown blocks, trailing commas, etc.
+ */
+function extractAndCleanJSON(responseText: string): string {
+  // Trim whitespace
+  let cleaned = responseText.trim();
+  
+  // Remove markdown code blocks
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.replace(/^```json\n?/g, '').replace(/```\n?$/g, '');
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```\n?/g, '').replace(/```\n?$/g, '');
+  }
+  
+  // Trim again after removing markdown
+  cleaned = cleaned.trim();
+  
+  // Try to find JSON object boundaries if there's extra text
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+  
+  // Remove trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+  
+  return cleaned;
+}
+
+/**
  * Trigger price comparison edge function asynchronously
  */
 async function triggerPriceComparison(supabase: any, receiptId: string) {
@@ -198,37 +228,30 @@ Importante:
       throw new Error('No response from Gemini');
     }
 
-    // Clean up markdown code blocks if present
-    responseText = responseText.trim();
-    if (responseText.startsWith('```json')) {
-      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    } else if (responseText.startsWith('```')) {
-      responseText = responseText.replace(/```\n?/g, '');
-    }
-    
-    // Trim any remaining whitespace
-    responseText = responseText.trim();
+    // Clean and extract JSON using helper function
+    const cleanedResponse = extractAndCleanJSON(responseText);
 
     let extractedData: GeminiResponse;
     try {
-      extractedData = JSON.parse(responseText);
+      extractedData = JSON.parse(cleanedResponse);
     } catch (parseError) {
       // Log the problematic JSON for debugging
       console.error('Failed to parse JSON response:', parseError);
-      console.error('Response text (first 500 chars):', responseText.substring(0, 500));
-      console.error('Response text (around error position):', responseText.substring(Math.max(0, 2573 - 100), Math.min(responseText.length, 2573 + 100)));
+      console.error('Original response (first 500 chars):', responseText.substring(0, 500));
+      console.error('Cleaned response (first 500 chars):', cleanedResponse.substring(0, 500));
       
-      // Try to fix common JSON issues
-      try {
-        // Remove any trailing commas before closing braces/brackets
-        let fixedText = responseText.replace(/,(\s*[}\]])/g, '$1');
-        
-        // Try parsing the fixed text
-        extractedData = JSON.parse(fixedText);
-        console.log('Successfully parsed after fixing common issues');
-      } catch (fixError) {
-        throw new Error(`Failed to parse Gemini response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Response length: ${responseText.length}`);
+      // If the error mentions a specific position, log that area
+      if (parseError instanceof SyntaxError) {
+        const match = parseError.message.match(/position (\d+)/);
+        if (match) {
+          const position = parseInt(match[1]);
+          const start = Math.max(0, position - 100);
+          const end = Math.min(cleanedResponse.length, position + 100);
+          console.error(`Context around error position ${position}:`, cleanedResponse.substring(start, end));
+        }
       }
+      
+      throw new Error(`Failed to parse Gemini response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Response length: ${cleanedResponse.length}`);
     }
 
     // Transform items to match database schema

@@ -142,6 +142,7 @@ serve(async (req) => {
 
 Importante:
 - Devuelve SOLO JSON válido, sin texto adicional
+- Asegúrate de escapar correctamente todos los caracteres especiales en strings (comillas, saltos de línea, barras invertidas)
 - Si no encuentras un campo, usa null
 - Para la fecha, extrae en formato YYYY-MM-DD, si falta el año usa el año actual
 - Para el total, extrae el monto final como número
@@ -149,7 +150,7 @@ Importante:
 - Para items, extrae todos los que puedas identificar
 - Para cada item, asigna una o más categorías de: food, beverages, clothing, electronics, travel, education, health, entertainment, home, transport, household, personal-care, other
 - Los items pueden tener múltiples categorías (ej: champú podría ser ["personal-care", "health"])
-- Para summary, genera una breve descripción en lenguaje natural de lo que representa este ticket
+- Para summary, genera una breve descripción breve (máximo 50 caracteres) sin saltos de línea
 - Sé lo más preciso posible`;
 
     const geminiResponse = await fetch(
@@ -178,6 +179,7 @@ Importante:
             topK: 32,
             topP: 1,
             maxOutputTokens: 4096,
+            responseMimeType: 'application/json',
           },
         }),
       }
@@ -203,8 +205,31 @@ Importante:
     } else if (responseText.startsWith('```')) {
       responseText = responseText.replace(/```\n?/g, '');
     }
+    
+    // Trim any remaining whitespace
+    responseText = responseText.trim();
 
-    const extractedData: GeminiResponse = JSON.parse(responseText);
+    let extractedData: GeminiResponse;
+    try {
+      extractedData = JSON.parse(responseText);
+    } catch (parseError) {
+      // Log the problematic JSON for debugging
+      console.error('Failed to parse JSON response:', parseError);
+      console.error('Response text (first 500 chars):', responseText.substring(0, 500));
+      console.error('Response text (around error position):', responseText.substring(Math.max(0, 2573 - 100), Math.min(responseText.length, 2573 + 100)));
+      
+      // Try to fix common JSON issues
+      try {
+        // Remove any trailing commas before closing braces/brackets
+        let fixedText = responseText.replace(/,(\s*[}\]])/g, '$1');
+        
+        // Try parsing the fixed text
+        extractedData = JSON.parse(fixedText);
+        console.log('Successfully parsed after fixing common issues');
+      } catch (fixError) {
+        throw new Error(`Failed to parse Gemini response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Response length: ${responseText.length}`);
+      }
+    }
 
     // Transform items to match database schema
     const items = extractedData.items?.map(item => ({

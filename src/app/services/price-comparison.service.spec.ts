@@ -17,8 +17,21 @@ describe('PriceComparisonService', () => {
     expect(service.isInitialized()).toBeFalsy();
   });
 
-  it('should initialize with API key', () => {
+  it('should be initialized after calling initialize with API key', () => {
     const mockApiKey = 'test-api-key-12345';
-    expect(() => service.initialize(mockApiKey)).not.toThrow();
+    service.initialize(mockApiKey);
+    expect(service.isInitialized()).toBeTruthy();
+  });
+
+  it('should return empty array when finding alternatives without initialization', async () => {
+    const mockItem = {
+      name: 'Test Product',
+      price: 10,
+      quantity: 1
+    };
+    
+    await expectAsync(
+      service.findCheaperAlternatives(mockItem, 'USD')
+    ).toBeRejectedWithError(/not initialized/);
   });
 });

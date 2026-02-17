@@ -31,6 +31,28 @@ export class CameraService {
   }
 
   /**
+   * Selects a photo from the device's gallery
+   * @returns Promise with the photo data
+   */
+  async selectFromGallery(): Promise<Photo> {
+    try {
+      // Select photo from gallery
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Photos,
+        quality: 90,
+        allowEditing: false,
+        correctOrientation: true
+      });
+
+      return photo;
+    } catch (error) {
+      console.error('Error selecting photo from gallery:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Checks if camera is available
    * @returns Promise with boolean indicating camera availability
    */

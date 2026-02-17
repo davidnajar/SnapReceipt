@@ -323,6 +323,8 @@ export class SupabaseService {
         error_message: string | null;
         currency: string | null;
         summary: string | null;
+        price_comparisons: any;
+        price_comparisons_updated_at: string | null;
       }) => ({
         id: item.id,
         date: item.date,
@@ -336,7 +338,9 @@ export class SupabaseService {
         storagePath: item.storage_path || undefined,
         errorMessage: item.error_message || undefined,
         currency: item.currency || undefined,
-        summary: item.summary || undefined
+        summary: item.summary || undefined,
+        priceComparisons: item.price_comparisons || undefined,
+        priceComparisonsUpdatedAt: item.price_comparisons_updated_at ? new Date(item.price_comparisons_updated_at) : undefined
       }));
     } catch (error) {
       console.error('Error fetching receipts:', error);

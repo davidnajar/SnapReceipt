@@ -4,7 +4,7 @@ import { LoadingController, AlertController } from '@ionic/angular';
 import { SupabaseService } from '../services/supabase.service';
 import { CategoryHelper } from '../services/category-helper';
 import { CurrencyHelper } from '../services/currency-helper';
-import { Receipt, ReceiptItem } from '../models/receipt.model';
+import { Receipt, ReceiptItem, PriceComparison } from '../models/receipt.model';
 
 @Component({
   selector: 'app-receipt-detail',
@@ -15,6 +15,7 @@ import { Receipt, ReceiptItem } from '../models/receipt.model';
 export class ReceiptDetailPage implements OnInit {
   receipt: Receipt | null = null;
   isLoading = false;
+  priceComparisons: Map<number, PriceComparison[]> = new Map();
 
   constructor(
     private route: ActivatedRoute,
@@ -30,6 +31,10 @@ export class ReceiptDetailPage implements OnInit {
     const receiptId = this.route.snapshot.paramMap.get('id');
     if (receiptId) {
       await this.loadReceipt(receiptId);
+      // Load price comparisons if available
+      if (this.receipt?.priceComparisons) {
+        this.updatePriceComparisons(this.receipt.priceComparisons);
+      }
     } else {
       this.showError('No receipt ID provided');
       this.router.navigate(['/receipts']);
@@ -103,6 +108,51 @@ export class ReceiptDetailPage implements OnInit {
       return [item.category];
     }
     return [];
+  }
+
+  /**
+   * Update price comparisons from database result
+   */
+  private updatePriceComparisons(priceComparisonsData: any) {
+    this.priceComparisons.clear();
+    
+    if (priceComparisonsData && typeof priceComparisonsData === 'object') {
+      Object.keys(priceComparisonsData).forEach(key => {
+        const index = parseInt(key, 10);
+        if (!isNaN(index)) {
+          this.priceComparisons.set(index, priceComparisonsData[key]);
+        }
+      });
+    }
+  }
+
+  /**
+   * Get price comparisons for a specific item
+   */
+  getPriceComparisonsForItem(index: number): PriceComparison[] {
+    return this.priceComparisons.get(index) || [];
+  }
+
+  /**
+   * Check if an item has price comparisons
+   */
+  hasPriceComparisons(index: number): boolean {
+    const comparisons = this.priceComparisons.get(index);
+    return comparisons !== undefined && comparisons.length > 0;
+  }
+
+  /**
+   * Get total savings if user buys all cheaper alternatives
+   */
+  getTotalPotentialSavings(): number {
+    let totalSavings = 0;
+    this.priceComparisons.forEach((comparisons) => {
+      if (comparisons.length > 0) {
+        // Use the first (best) alternative for each item
+        totalSavings += comparisons[0].savings;
+      }
+    });
+    return totalSavings;
   }
 
   /**

@@ -43,27 +43,69 @@
     <ion-card *ngIf="receipt.items && receipt.items.length > 0">
       <ion-card-header>
         <ion-card-title>Artículos ({{ receipt.items.length }})</ion-card-title>
+        <ion-card-subtitle *ngIf="getTotalPotentialSavings() > 0" color="success">
+          <ion-icon name="trending-down"></ion-icon>
+          Ahorro potencial: {{ formatAmount(getTotalPotentialSavings(), receipt.currency) }}
+        </ion-card-subtitle>
       </ion-card-header>
       <ion-card-content>
         <ion-list>
-          <ion-item *ngFor="let item of receipt.items" lines="full">
-            <ion-label>
-              <h3>{{ item.name }}</h3>
-              <p>Cantidad: {{ item.quantity }}</p>
-              <div class="item-categories">
-                <ion-chip 
-                  *ngFor="let category of getItemCategories(item)" 
-                  [color]="getCategoryColor(category)"
-                  class="item-category-chip">
-                  <ion-icon [name]="getCategoryIcon(category)"></ion-icon>
-                  <ion-label>{{ category }}</ion-label>
-                </ion-chip>
+          <div *ngFor="let item of receipt.items; let i = index">
+            <ion-item lines="full">
+              <ion-label>
+                <h3>{{ item.name }}</h3>
+                <p>Cantidad: {{ item.quantity }}</p>
+                <div class="item-categories">
+                  <ion-chip 
+                    *ngFor="let category of getItemCategories(item)" 
+                    [color]="getCategoryColor(category)"
+                    class="item-category-chip">
+                    <ion-icon [name]="getCategoryIcon(category)"></ion-icon>
+                    <ion-label>{{ category }}</ion-label>
+                  </ion-chip>
+                </div>
+              </ion-label>
+              <ion-note slot="end" class="item-price">
+                {{ formatAmount(item.price, receipt.currency) }}
+              </ion-note>
+            </ion-item>
+
+            <!-- Price Comparison Section -->
+            <div *ngIf="hasPriceComparisons(i)" class="price-comparison-container">
+              <div class="price-comparison-header">
+                <ion-icon name="pricetag-outline" color="success"></ion-icon>
+                <span class="price-comparison-title">Opciones más baratas encontradas:</span>
               </div>
-            </ion-label>
-            <ion-note slot="end" class="item-price">
-              {{ formatAmount(item.price, receipt.currency) }}
-            </ion-note>
-          </ion-item>
+              <div class="price-comparison-list">
+                <div *ngFor="let comparison of getPriceComparisonsForItem(i)" class="price-comparison-item">
+                  <div class="comparison-info">
+                    <div class="store-info">
+                      <ion-icon 
+                        [name]="comparison.availability === 'online' ? 'globe-outline' : comparison.availability === 'local' ? 'location-outline' : 'cart-outline'"
+                        [color]="comparison.availability === 'online' ? 'primary' : 'tertiary'">
+                      </ion-icon>
+                      <strong>{{ comparison.storeName }}</strong>
+                    </div>
+                    <div class="price-info">
+                      <span class="comparison-price">{{ formatAmount(comparison.price, receipt.currency) }}</span>
+                      <ion-chip color="success" class="savings-chip">
+                        <ion-icon name="arrow-down"></ion-icon>
+                        <ion-label>-{{ formatAmount(comparison.savings, receipt.currency) }} ({{ comparison.savingsPercent.toFixed(0) }}%)</ion-label>
+                      </ion-chip>
+                    </div>
+                    <div class="location-url" *ngIf="comparison.location || comparison.url">
+                      <ion-icon name="pin-outline" *ngIf="comparison.location"></ion-icon>
+                      <span *ngIf="comparison.location">{{ comparison.location }}</span>
+                      <a *ngIf="comparison.url" [href]="comparison.url" target="_blank" class="product-link">
+                        <ion-icon name="open-outline"></ion-icon>
+                        Ver producto
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </ion-list>
       </ion-card-content>
     </ion-card>

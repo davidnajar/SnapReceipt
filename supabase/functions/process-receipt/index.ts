@@ -1,5 +1,6 @@
 // Supabase Edge Function: process-receipt
 // Processes receipt images asynchronously using Gemini AI
+// VERBOSE LOGGING ENABLED
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -8,6 +9,17 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const LOG_PREFIX = '[process-receipt]';
+
+function log(step: string, data?: any) {
+  console.log(JSON.stringify({
+    service: 'process-receipt',
+    step,
+    timestamp: new Date().toISOString(),
+    ...(data && { data })
+  }));
+}
 
 interface ReceiptItem {
   descripcion: string;
@@ -26,27 +38,31 @@ interface GeminiResponse {
 }
 
 function extractAndCleanJSON(responseText: string): string {
+  log('extract-json-start');
   let cleaned = responseText.trim();
+
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\n?/g, '').replace(/```\n?$/g, '');
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\n?/g, '').replace(/```\n?$/g, '');
   }
-  cleaned = cleaned.trim();
+
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (jsonMatch) cleaned = jsonMatch[0];
+
   cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+
+  log('extract-json-complete');
   return cleaned;
 }
 
-/**
- * Triggers the next Edge Function to compare prices
- */
-async function triggerPriceComparison(supabase: any, receiptId: string) {
+async function triggerPriceComparison(receiptId: string) {
   try {
+    log('trigger-price-comparison-start', { receiptId });
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
+
     const response = await fetch(
       `${supabaseUrl}/functions/v1/compare-prices`,
       {
@@ -60,46 +76,80 @@ async function triggerPriceComparison(supabase: any, receiptId: string) {
     );
 
     if (!response.ok) {
-      console.error('Price comparison trigger failed:', await response.text());
+      log('trigger-price-comparison-failed', {
+        status: response.status,
+        body: await response.text()
+      });
     } else {
-      console.log('Price comparison triggered successfully');
+      log('trigger-price-comparison-success', { receiptId });
     }
   } catch (error) {
-    console.error('Error triggering price comparison:', error);
+    log('trigger-price-comparison-error', { error: error.message });
   }
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const startTime = Date.now();
+
+  if (req.method === 'OPTIONS')
+    return new Response('ok', { headers: corsHeaders });
 
   let receiptId: string | undefined;
 
   try {
+    log('request-received');
+
     const body = await req.json();
     receiptId = body.receiptId;
+
     if (!receiptId) throw new Error('Receipt ID is required');
+
+    log('receipt-id-validated', { receiptId });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    log('fetching-receipt');
+
     const { data: receipt, error: receiptError } = await supabase
-      .from('receipts').select('*').eq('id', receiptId).single();
+      .from('receipts')
+      .select('*')
+      .eq('id', receiptId)
+      .single();
 
-    if (receiptError || !receipt) throw new Error(`Receipt not found`);
+    if (receiptError || !receipt)
+      throw new Error(`Receipt not found`);
 
-    const { data: userSettings, error: settingsError } = await supabase
-      .from('user_settings').select('gemini_api_key').eq('user_id', receipt.user_id).single();
+    log('receipt-loaded', { user_id: receipt.user_id });
 
-    if (settingsError || !userSettings?.gemini_api_key) throw new Error('API key missing');
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('gemini_api_key')
+      .eq('user_id', receipt.user_id)
+      .single();
 
-    const { data: imageData, error: downloadError } = await supabase.storage
-      .from('receipts').download(receipt.storage_path);
+    if (!userSettings?.gemini_api_key)
+      throw new Error('API key missing');
 
-    if (downloadError || !imageData) throw new Error(`Download failed`);
+    log('gemini-key-found');
+
+    const { data: imageData } = await supabase.storage
+      .from('receipts')
+      .download(receipt.storage_path);
+
+    if (!imageData)
+      throw new Error(`Download failed`);
+
+    log('image-downloaded');
 
     const arrayBuffer = await imageData.arrayBuffer();
-    const base64Image = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+    const base64Image = btoa(
+      new Uint8Array(arrayBuffer)
+        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+
+    log('calling-gemini');
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userSettings.gemini_api_key}`,
@@ -113,19 +163,33 @@ serve(async (req) => {
               { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
             ]
           }],
-          generationConfig: { temperature: 0.4, responseMimeType: 'application/json' },
+          generationConfig: {
+            temperature: 0.4,
+            responseMimeType: 'application/json'
+          },
         }),
       }
     );
 
-    if (!geminiResponse.ok) throw new Error(`Gemini Error: ${await geminiResponse.text()}`);
+    if (!geminiResponse.ok)
+      throw new Error(`Gemini Error: ${await geminiResponse.text()}`);
+
+    log('gemini-response-received');
 
     const geminiData = await geminiResponse.json();
     const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!responseText) throw new Error('Empty Gemini response');
+
+    if (!responseText)
+      throw new Error('Empty Gemini response');
 
     const cleanedResponse = extractAndCleanJSON(responseText);
     const extractedData: GeminiResponse = JSON.parse(cleanedResponse);
+
+    log('gemini-json-parsed', {
+      merchant: extractedData.comercio,
+      total: extractedData.total,
+      items_count: extractedData.items?.length
+    });
 
     const items = extractedData.items?.map(item => ({
       name: item.descripcion,
@@ -140,13 +204,19 @@ serve(async (req) => {
       date: extractedData.fecha,
       total: extractedData.total,
       currency: extractedData.moneda || 'EUR',
-      items: items,
+      items,
       summary: extractedData.summary,
       updated_at: new Date().toISOString(),
     }).eq('id', receiptId);
 
-    // DISPARADOR DE LA SIGUIENTE FUNCIÓN
-    triggerPriceComparison(supabase, receiptId).catch(console.error);
+    log('receipt-updated');
+
+    triggerPriceComparison(receiptId).catch(console.error);
+
+    log('process-completed', {
+      receiptId,
+      duration_ms: Date.now() - startTime
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -154,7 +224,12 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error:', error.message);
+    log('process-error', {
+      receiptId,
+      error: error.message,
+      duration_ms: Date.now() - startTime
+    });
+
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
